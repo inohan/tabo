@@ -15,7 +15,7 @@ export class TournamentRepository implements TournamentRepositoryPort {
     const tournament = await this.db
       .selectFrom('tournament')
       .selectAll()
-      .where('id', '=', id)
+      .where('tournamentId', '=', id)
       .executeTakeFirst();
     if (tournament === undefined) {
       return err(new NotFoundError(`Tournament with id ${id} not found`));
@@ -24,22 +24,24 @@ export class TournamentRepository implements TournamentRepositoryPort {
   }
 
   async save({
-    id,
+    tournamentId,
     baseUrl,
     name,
     shortName,
     slug,
-    tabId,
+    id,
+    token,
   }: Tournament): Promise<Result<void, SaveFailedError>> {
     const saved = await this.db
       .insertInto('tournament')
       .values({
-        id,
+        tournamentId,
         baseUrl,
         name,
         shortName,
         slug,
-        tabId,
+        id,
+        token,
         createdAt: new Date(),
         updatedAt: null,
       })
@@ -49,7 +51,6 @@ export class TournamentRepository implements TournamentRepositoryPort {
           name,
           shortName,
           slug,
-          tabId,
           updatedAt: new Date(),
         }),
       )
@@ -75,19 +76,21 @@ export class TournamentRepository implements TournamentRepositoryPort {
 }
 
 function toModel(row: {
-  id: string;
+  tournamentId: string;
   baseUrl: string;
   name: string;
   shortName: string;
   slug: string;
-  tabId: number;
+  id: number;
+  token: string;
 }): Tournament {
   return Tournament.init({
-    id: TournamentId.init(row.id),
+    tournamentId: TournamentId.init(row.tournamentId),
     baseUrl: row.baseUrl,
     name: row.name,
     shortName: row.shortName,
     slug: row.slug,
-    tabId: row.tabId,
+    id: row.id,
+    token: row.token,
   });
 }

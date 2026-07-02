@@ -1,62 +1,46 @@
 import {
-  Tournament,
   Institution,
   InstitutionId,
   Team,
   TeamId,
   Speaker,
   SpeakerId,
-  Venue,
   VenueId,
   BreakCategory,
   BreakCategoryId,
   SpeakerCategory,
   SpeakerCategoryId,
 } from '../domain';
+import * as out from './output-dto';
 import { ResultAsync } from 'neverthrow';
-import { Branded, Unbranded, Brand } from 'src/lib/brand';
-import { ImmutableKeys, MutableKeys } from 'src/lib/mutable-keys';
+import { PickUnbranded, PickBranded } from 'src/lib/brand';
 import { TabbycatError } from './error';
 
 type TabbycatResult<T> = ResultAsync<T, TabbycatError>;
 
-type PickUnbranded<
-  T extends Branded<object, symbol>,
-  RequiredKeys extends MutableKeys<Unbranded<T>>,
-  ExcludedMutableKeys extends Exclude<MutableKeys<Unbranded<T>>, RequiredKeys> =
-    never,
-> = Pick<Unbranded<T>, RequiredKeys> &
-  Partial<
-    Pick<
-      Unbranded<T>,
-      Exclude<MutableKeys<Unbranded<T>>, RequiredKeys | ExcludedMutableKeys>
-    >
-  >;
-
-type PickBranded<
-  T extends Branded<object, symbol>,
-  Immutables extends ImmutableKeys<Unbranded<T>> = 'id',
-> = Pick<Unbranded<T>, MutableKeys<Unbranded<T>> | Immutables> &
-  (T extends Brand<infer S> ? Brand<S> : never);
-
+export type ClientFactoryPort = (config: {
+  baseUrl: string;
+  token: string;
+  tournamentSlug: string;
+}) => ClientPort;
 export interface ClientPort {
   tournaments: {
-    get: () => TabbycatResult<Tournament>;
+    get: () => TabbycatResult<out.TournamentDTO>;
   };
   institutions: {
-    get: (institutionId: InstitutionId) => TabbycatResult<Institution>;
-    list: () => TabbycatResult<Institution[]>;
+    get: (institutionId: InstitutionId) => TabbycatResult<out.InstitutionDTO>;
+    list: () => TabbycatResult<out.InstitutionDTO[]>;
     create: (
       institution: PickUnbranded<Institution, 'name' | 'code'>,
-    ) => TabbycatResult<Institution>;
+    ) => TabbycatResult<out.InstitutionDTO>;
     update: (
       institution: PickBranded<Institution>,
-    ) => TabbycatResult<Institution>;
+    ) => TabbycatResult<out.InstitutionDTO>;
     delete: (institutionId: InstitutionId) => TabbycatResult<void>;
   };
   teams: {
-    get: (teamId: TeamId) => TabbycatResult<Team>;
-    list: () => TabbycatResult<Team[]>;
+    get: (teamId: TeamId) => TabbycatResult<out.TeamDTO>;
+    list: () => TabbycatResult<out.TeamDTO[]>;
     create: (
       team: PickUnbranded<
         Team,
@@ -68,55 +52,57 @@ export interface ClientPort {
           'institutionId' | 'teamId'
         >[];
       },
-    ) => TabbycatResult<Team>;
-    update: (team: PickBranded<Team>) => TabbycatResult<Team>;
+    ) => TabbycatResult<out.TeamDTO>;
+    update: (team: PickBranded<Team>) => TabbycatResult<out.TeamDTO>;
     delete: (teamId: TeamId) => TabbycatResult<void>;
   };
   speakers: {
-    get: (speakerId: SpeakerId) => TabbycatResult<Speaker>;
-    list: () => TabbycatResult<Speaker[]>;
+    get: (speakerId: SpeakerId) => TabbycatResult<out.SpeakerDTO>;
+    list: () => TabbycatResult<out.SpeakerDTO[]>;
     create: (
       speaker: PickUnbranded<
         Speaker,
         'name' | 'teamId' | 'categories',
         'institutionId'
       >,
-    ) => TabbycatResult<Speaker>;
-    update: (speaker: PickBranded<Speaker>) => TabbycatResult<Speaker>;
+    ) => TabbycatResult<out.SpeakerDTO>;
+    update: (speaker: PickBranded<Speaker>) => TabbycatResult<out.SpeakerDTO>;
     delete: (speakerId: SpeakerId) => TabbycatResult<void>;
   };
   venues: {
-    get: (venueId: VenueId) => TabbycatResult<Venue>;
-    list: () => TabbycatResult<Venue[]>;
-    // create: (venue: PickUnbranded<Venue, "">) => TabbycatResult<Venue>;
-    // update: (venue: PickBranded<Venue>) => TabbycatResult<Venue>;
+    get: (venueId: VenueId) => TabbycatResult<out.VenueDTO>;
+    list: () => TabbycatResult<out.VenueDTO[]>;
+    // create: (venue: PickUnbranded<Venue, "">) => TabbycatResult<OmitUnbranded<Venue>>;
+    // update: (venue: PickBranded<Venue>) => TabbycatResult<OmitUnbranded<Venue>>;
     // delete: (venueId: VenueId) => TabbycatResult<void>;
   };
   breakCategories: {
-    get: (breakCategoryId: BreakCategoryId) => TabbycatResult<BreakCategory>;
-    list: () => TabbycatResult<BreakCategory[]>;
+    get: (
+      breakCategoryId: BreakCategoryId,
+    ) => TabbycatResult<out.BreakCategoryDTO>;
+    list: () => TabbycatResult<out.BreakCategoryDTO[]>;
     create: (
       breakCategory: PickUnbranded<
         BreakCategory,
         'name' | 'slug' | 'seq' | 'breakSize' | 'isGeneral' | 'priority'
       >,
-    ) => TabbycatResult<BreakCategory>;
+    ) => TabbycatResult<out.BreakCategoryDTO>;
     update: (
       breakCategory: PickBranded<BreakCategory>,
-    ) => TabbycatResult<BreakCategory>;
+    ) => TabbycatResult<out.BreakCategoryDTO>;
     delete: (breakCategoryId: BreakCategoryId) => TabbycatResult<void>;
   };
   speakerCategories: {
     get: (
       speakerCategoryId: SpeakerCategoryId,
-    ) => TabbycatResult<SpeakerCategory>;
-    list: () => TabbycatResult<SpeakerCategory[]>;
+    ) => TabbycatResult<out.SpeakerCategoryDTO>;
+    list: () => TabbycatResult<out.SpeakerCategoryDTO[]>;
     create: (
       speakerCategory: PickUnbranded<SpeakerCategory, 'name' | 'slug' | 'seq'>,
-    ) => TabbycatResult<SpeakerCategory>;
+    ) => TabbycatResult<out.SpeakerCategoryDTO>;
     update: (
       speakerCategory: PickBranded<SpeakerCategory>,
-    ) => TabbycatResult<SpeakerCategory>;
+    ) => TabbycatResult<out.SpeakerCategoryDTO>;
     delete: (speakerCategoryId: SpeakerCategoryId) => TabbycatResult<void>;
   };
 }

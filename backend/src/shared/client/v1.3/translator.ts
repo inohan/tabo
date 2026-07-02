@@ -1,172 +1,171 @@
 import { parseTournamentUrl } from 'src/lib/url';
 import {
-  Tournament,
-  TournamentId,
-  Institution,
   InstitutionId,
-  Team,
   TeamId,
-  Speaker,
   SpeakerId,
-  Venue,
   VenueId,
-  BreakCategory,
   BreakCategoryId,
-  SpeakerCategory,
   SpeakerCategoryId,
 } from 'src/shared/domain';
-import {
-  Tournament as TournamentDTO,
-  Institution as InstitutionDTO,
-  Team as TeamDTO,
-  Speaker as SpeakerDTO,
-  Venue as VenueDTO,
-  SpeakerCategory as SpeakerCategoryDTO,
-  BreakCategory as BreakCategoryDTO,
-} from 'tabbycat-client/out/v1.3.0';
+import * as DTO from '../output-dto';
+import * as Tc from 'tabbycat-client/out/v1.3.0';
+import * as v from 'valibot';
 import { UrlDeserializer } from './url';
 import { TabbycatError } from '../error';
 
 // Translator belongs under v1.3 as this is dependent on API schema and API version
 
-/**
- * Generates a anti-corruption translator that translates Tabbycat DTO schema into domain entities.
- * @param tournamentId Tournament ID that will be inserted. Unique value that tabbycat does not own.
- * @returns Translator
- */
-export const initTranslator = (tournamentId: TournamentId) => ({
-  tournament: ({ id, name, url, slug, shortName }: TournamentDTO): Tournament =>
-    Tournament.init({
-      id: tournamentId,
-      tabId: id,
-      baseUrl: parseTournamentUrl(url),
-      name,
-      slug,
-      shortName: shortName ?? name,
-    }),
-  institution: ({ id, code, name }: InstitutionDTO): Institution =>
-    Institution.init({
-      tournamentId,
-      id: InstitutionId.init(id),
-      code,
-      name,
-    }),
-  team: ({
-    id,
-    longName,
-    shortName,
-    breakCategories,
-    emoji,
-    institution,
-    institutionConflicts,
-    reference,
-    shortReference,
-    speakers,
-    useInstitutionPrefix,
-    codeName,
-  }: TeamDTO): Team => {
-    if (
-      reference === undefined ||
-      shortReference === undefined ||
-      institutionConflicts === undefined ||
-      breakCategories === undefined ||
-      speakers === undefined ||
-      institution === undefined ||
-      emoji === undefined ||
-      codeName === undefined ||
-      useInstitutionPrefix === undefined
-    ) {
-      throw new TabbycatError(undefined, 'Missing fields in TeamDTO');
-    }
-    return Team.init({
-      tournamentId,
-      id: TeamId.init(id),
+const TournamentSchema = v.object({
+  id: v.number(),
+  baseUrl: v.pipe(v.string(), v.transform(parseTournamentUrl)),
+  slug: v.string(),
+  name: v.string(),
+  shortName: v.string(),
+});
+
+const InstitutionSchema = v.object({
+  id: v.pipe(v.number(), v.transform(InstitutionId.init)),
+  name: v.string(),
+  code: v.string(),
+});
+
+const TeamSchema = v.pipe(
+  v.object({
+    id: v.pipe(v.number(), v.transform(TeamId.init)),
+    reference: v.string(),
+    shortReference: v.string(),
+    institution: v.union([
+      v.pipe(v.string(), v.transform(UrlDeserializer.institutionId)),
+      v.null(),
+    ]),
+    breakCategories: v.array(
+      v.pipe(v.string(), v.transform(UrlDeserializer.breakCategoryId)),
+    ),
+    institutionConflicts: v.array(
+      v.pipe(v.string(), v.transform(UrlDeserializer.institutionId)),
+    ),
+    speakers: v.array(
+      v.pipe(
+        v.object({
+          id: v.pipe(v.string(), v.transform(UrlDeserializer.speakerId)),
+        }),
+        v.transform(({ id }) => id),
+      ),
+    ),
+    emoji: v.union([v.string(), v.null()]),
+    codeName: v.string(),
+    useInstitutionPrefix: v.boolean(),
+    shortName: v.string(),
+    longName: v.string(),
+  }),
+  v.transform(
+    ({
+      id,
       reference,
       shortReference,
-      institutionId:
-        institution !== null
-          ? UrlDeserializer.institutionId(institution)
-          : null,
-      institutionConflicts: institutionConflicts.map(
-        UrlDeserializer.institutionId,
-      ),
-      breakCategories: breakCategories.map(UrlDeserializer.breakCategoryId),
+      institution,
+      breakCategories,
+      institutionConflicts,
+      speakers,
       emoji,
-      longName,
-      shortName,
-      speakers: speakers.map(({ url }) => UrlDeserializer.speakerId(url)),
       codeName,
       useInstitutionPrefix,
-    });
-  },
-  speaker: ({
-    categories,
-    id,
-    name,
-    team,
-    anonymous,
-    email,
-  }: SpeakerDTO): Speaker => {
-    if (anonymous === undefined || email === undefined) {
-      throw new TabbycatError(undefined, 'Missing field in SpeakerDTO');
-    }
-    return Speaker.init({
-      tournamentId,
-      id: SpeakerId.init(id),
-      teamId: UrlDeserializer.teamId(team),
+      shortName,
+      longName,
+    }) => ({
+      id,
+      reference,
+      shortReference,
+      institutionId: institution,
+      institutionConflicts,
+      speakers,
+      breakCategories,
+      emoji,
+      codeName,
+      useInstitutionPrefix,
+      shortName,
+      longName,
+    }),
+  ),
+);
+
+const SpeakerSchema = v.pipe(
+  v.object({
+    id: v.pipe(v.number(), v.transform(SpeakerId.init)),
+    name: v.string(),
+    institution: v.union([
+      v.pipe(v.string(), v.transform(UrlDeserializer.institutionId)),
+      v.null(),
+    ]),
+    team: v.pipe(v.string(), v.transform(UrlDeserializer.teamId)),
+    categories: v.array(
+      v.pipe(v.string(), v.transform(UrlDeserializer.speakerCategoryId)),
+    ),
+    anonymous: v.boolean(),
+    email: v.union([v.string(), v.null()]),
+  }),
+  v.transform(
+    ({ id, name, institution, team, categories, anonymous, email }) => ({
+      id,
       name,
+      institution_id: institution,
+      teamId: team,
+      categories,
       anonymous,
       email,
-      categories: categories.map(UrlDeserializer.speakerCategoryId),
-      institutionId: null, //TODO: Think of institution
-    });
-  },
-  venue: ({ id, displayName, name, priority }: VenueDTO): Venue => {
-    return Venue.init({
-      tournamentId,
-      id: VenueId.init(id),
-      displayName,
-      name,
-      priority,
-    });
-  },
-  breakCategory: ({
-    id,
-    breakSize,
-    isGeneral,
-    name,
-    priority,
-    reserveSize,
-    seq,
-    slug,
-  }: BreakCategoryDTO): BreakCategory => {
-    if (reserveSize === undefined) {
-      throw new TabbycatError(undefined, 'Missing field in BreakCategoryDTO');
-    }
-    return BreakCategory.init({
-      tournamentId,
-      id: BreakCategoryId.init(id),
-      breakSize,
-      isGeneral,
-      name,
-      priority,
-      reserveSize,
-      seq,
-      slug,
-    });
-  },
-  speakerCategory: ({
-    id,
-    name,
-    seq,
-    slug,
-  }: SpeakerCategoryDTO): SpeakerCategory => {
-    return SpeakerCategory.init({
-      tournamentId,
-      id: SpeakerCategoryId.init(id),
-      name,
-      seq,
-      slug,
-    });
-  },
+    }),
+  ),
+);
+
+const VenueSchema = v.object({
+  id: v.pipe(v.number(), v.transform(VenueId.init)),
+  name: v.string(),
+  displayName: v.string(),
+  priority: v.number(),
 });
+
+const BreakCategorySchema = v.object({
+  id: v.pipe(v.number(), v.transform(BreakCategoryId.init)),
+  name: v.string(),
+  slug: v.string(),
+  seq: v.number(),
+  breakSize: v.number(),
+  reserveSize: v.number(),
+  isGeneral: v.boolean(),
+  priority: v.number(),
+});
+
+const SpeakerCategorySchema = v.object({
+  id: v.pipe(v.number(), v.transform(SpeakerCategoryId.init)),
+  name: v.string(),
+  slug: v.string(),
+  seq: v.number(),
+});
+
+const tryParse = <
+  T extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>,
+>(
+  schema: T,
+  object: unknown,
+): v.InferOutput<T> => {
+  try {
+    return v.parse(schema, object);
+  } catch (error) {
+    throw new TabbycatError(undefined, `parsing failed: ${error as Error}`);
+  }
+};
+
+export const Translator = {
+  tournament: (tournament: Tc.Tournament): DTO.TournamentDTO =>
+    tryParse(TournamentSchema, tournament),
+  institution: (institution: Tc.Institution): DTO.InstitutionDTO =>
+    tryParse(InstitutionSchema, institution),
+  team: (team: Tc.Team): DTO.TeamDTO => tryParse(TeamSchema, team),
+  speaker: (speaker: Tc.Speaker): DTO.SpeakerDTO =>
+    tryParse(SpeakerSchema, speaker),
+  venue: (venue: Tc.Venue): DTO.VenueDTO => tryParse(VenueSchema, venue),
+  breakCategory: (bc: Tc.BreakCategory): DTO.BreakCategoryDTO =>
+    tryParse(BreakCategorySchema, bc),
+  speakerCategory: (sc: Tc.SpeakerCategory): DTO.SpeakerCategoryDTO =>
+    tryParse(SpeakerCategorySchema, sc),
+};

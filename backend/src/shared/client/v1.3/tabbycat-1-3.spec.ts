@@ -7,10 +7,9 @@ const TOURNAMENT_ID = TournamentId.init('tid-001');
 
 function createClient() {
   return generateClientV1_3({
-    bearerToken: 'test-token',
+    token: 'test-token',
     baseUrl: BASE_URL,
     tournamentSlug: TOURNAMENT_SLUG,
-    tournamentId: TOURNAMENT_ID,
   });
 }
 

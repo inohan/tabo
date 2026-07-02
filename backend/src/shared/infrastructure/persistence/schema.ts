@@ -18,12 +18,13 @@ import {
 } from 'src/shared/domain';
 
 export const tournamentTable = pgTable('tournament', {
-  id: varchar().primaryKey(),
+  tournamentId: varchar().primaryKey(),
   baseUrl: varchar().notNull(),
-  tabId: integer().notNull(),
+  id: integer().notNull(),
   slug: varchar().notNull(),
   name: varchar().notNull(),
   shortName: varchar().notNull(),
+  token: varchar().notNull(),
   createdAt: timestamp().notNull(),
   updatedAt: timestamp(),
 });
@@ -33,7 +34,7 @@ export const institutionTable = pgTable(
   {
     tournamentId: varchar()
       .notNull()
-      .references(() => tournamentTable.id, { onDelete: 'cascade' }),
+      .references(() => tournamentTable.tournamentId, { onDelete: 'cascade' }),
     id: integer().notNull(),
     name: varchar().notNull(),
     code: varchar().notNull(),
@@ -49,7 +50,7 @@ export const teamTable = pgTable(
   {
     tournamentId: varchar()
       .notNull()
-      .references(() => tournamentTable.id, { onDelete: 'cascade' }),
+      .references(() => tournamentTable.tournamentId, { onDelete: 'cascade' }),
     id: integer().notNull(),
     reference: varchar().notNull(),
     shortReference: varchar().notNull(),
@@ -120,7 +121,7 @@ export const speakerTable = pgTable(
   {
     tournamentId: varchar()
       .notNull()
-      .references(() => tournamentTable.id, { onDelete: 'cascade' }),
+      .references(() => tournamentTable.tournamentId, { onDelete: 'cascade' }),
     id: integer().notNull(),
     name: varchar().notNull(),
     institutionId: integer(),
@@ -173,7 +174,7 @@ export const breakCategoryTable = pgTable(
   {
     tournamentId: varchar()
       .notNull()
-      .references(() => tournamentTable.id, { onDelete: 'cascade' }),
+      .references(() => tournamentTable.tournamentId, { onDelete: 'cascade' }),
     id: integer().notNull(),
     name: varchar().notNull(),
     slug: varchar().notNull(),
@@ -191,7 +192,7 @@ export const speakerCategoryTable = pgTable(
   {
     tournamentId: varchar()
       .notNull()
-      .references(() => tournamentTable.id, { onDelete: 'cascade' }),
+      .references(() => tournamentTable.tournamentId, { onDelete: 'cascade' }),
     id: integer().notNull(),
     name: varchar().notNull(),
     slug: varchar().notNull(),
@@ -206,7 +207,7 @@ export const adjudicatorTable = pgTable(
   {
     tournamentId: varchar()
       .notNull()
-      .references(() => tournamentTable.id, { onDelete: 'cascade' }),
+      .references(() => tournamentTable.tournamentId, { onDelete: 'cascade' }),
     id: integer().notNull(),
     name: varchar().notNull(),
     institutionId: integer(),
@@ -295,7 +296,7 @@ export const venueTable = pgTable(
   {
     tournamentId: varchar()
       .notNull()
-      .references(() => tournamentTable.id),
+      .references(() => tournamentTable.tournamentId),
     id: integer().notNull(),
     name: varchar().notNull(),
     displayName: varchar().notNull(),
@@ -323,7 +324,7 @@ export const roundTable = pgTable(
   {
     tournamentId: varchar()
       .notNull()
-      .references(() => tournamentTable.id),
+      .references(() => tournamentTable.tournamentId),
     id: integer().notNull(),
     breakCategoryId: integer(),
     displayName: varchar().notNull(),

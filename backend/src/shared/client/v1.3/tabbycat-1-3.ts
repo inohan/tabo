@@ -7,15 +7,14 @@ import {
   TournamentsApi,
   VenuesApi,
 } from 'tabbycat-client/out/v1.3.0';
-import { ClientPort } from '../client-port';
+import { ClientFactoryPort, ClientPort } from '../client-port';
 import { ResultAsync } from 'neverthrow';
 import { isResponseError, TabbycatError } from '../error';
-import { initTranslator } from './translator';
+import { Translator } from './translator';
 import {
   SpeakerId,
   TeamId,
   InstitutionId,
-  TournamentId,
   VenueId,
   BreakCategoryId,
   SpeakerCategoryId,
@@ -43,19 +42,17 @@ function asResult<T>(
   );
 }
 
-export const generateClientV1_3 = ({
-  bearerToken,
+export const generateClientV1_3: ClientFactoryPort = ({
   baseUrl,
+  token,
   tournamentSlug,
-  tournamentId,
 }: {
-  bearerToken: string;
   baseUrl: string;
+  token: string;
   tournamentSlug: string;
-  tournamentId: TournamentId;
 }): ClientPort => {
-  const config = new Configuration({ basePath: baseUrl, apiKey: bearerToken });
-  const translator = initTranslator(tournamentId);
+  const config = new Configuration({ basePath: baseUrl, apiKey: token });
+  const translator = Translator;
   return {
     tournaments: {
       get: () =>

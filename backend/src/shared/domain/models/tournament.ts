@@ -7,9 +7,10 @@ export type TournamentId = Branded<string, typeof tournamentIdSymbol>;
 
 export type Tournament = Branded<
   {
-    readonly id: TournamentId;
+    readonly tournamentId: TournamentId;
     readonly baseUrl: string;
-    readonly tabId: number;
+    readonly id: number;
+    readonly token: string;
     slug: string;
     name: string;
     shortName: string;
@@ -27,22 +28,25 @@ export const Tournament = {
   create: ({
     baseUrl,
     name,
-    tabId,
+    id,
     slug,
     shortName,
+    token,
   }: {
     baseUrl: string;
-    tabId: number;
+    id: number;
     name: string;
     slug: string;
     shortName: string;
+    token: string;
   }): Tournament =>
     Tournament.init({
-      id: TournamentId.create(),
+      tournamentId: TournamentId.create(),
       baseUrl,
-      tabId,
+      id,
       name,
       slug,
       shortName,
+      token,
     }),
 };

@@ -7,17 +7,23 @@ type _HandlePathSegment<T extends string> = T extends `:${infer ParamName}`
     ? { [K in ParamName]: string[] }
     : unknown;
 
-type SplitMatcher<T extends string> = T extends `/${infer A}{${infer Rest}`
-  ? _HandlePathSegment<A> & SplitMatcher<`{${Rest}`>
+type _SplitMatcher<T extends string> = T extends `/${infer A}{${infer Rest}`
+  ? _SplitMatcher<`/${A}`> & _SplitMatcher<`{${Rest}`>
   : T extends `/${infer A}/${infer Rest}`
-    ? _HandlePathSegment<A> & SplitMatcher<`/${Rest}`>
+    ? _HandlePathSegment<A> & _SplitMatcher<`/${Rest}`>
     : T extends `{/${infer A}}${infer Rest}`
-      ? Partial<SplitMatcher<`/${A}`>> & SplitMatcher<Rest>
+      ? (_SplitMatcher<`/${A}`> extends object
+          ? Partial<_SplitMatcher<`/${A}`>>
+          : unknown) &
+          _SplitMatcher<Rest>
       : T extends `/${infer A}`
         ? _HandlePathSegment<A>
         : T extends ''
-          ? object
+          ? unknown
           : T;
+
+type SplitMatcher<T extends string> =
+  _SplitMatcher<T> extends object ? _SplitMatcher<T> : object;
 
 type Stringable = string | number | bigint | undefined | boolean | null;
 
@@ -97,6 +103,19 @@ export const matchOrRaise = <T extends string>(
   const res = fn(path);
   if (res === false) {
     throw new UrlParseError(`Failed to parse ${url} into ${matcher}`);
+  }
+  return res.params as SplitMatcher<T>;
+};
+
+export const matchOrUndefined = <T extends string>(
+  url: string,
+  matcher: T,
+): SplitMatcher<T> | undefined => {
+  const path = new URL(url).pathname;
+  const fn = match(matcher);
+  const res = fn(path);
+  if (res === false) {
+    return undefined;
   }
   return res.params as SplitMatcher<T>;
 };
