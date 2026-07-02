@@ -1,38 +1,47 @@
 import { Branded, Struct } from 'src/lib/brand';
 import { TournamentId } from './tournament';
 import { BreakCategoryId } from './break-category';
+import { Enumify } from 'src/lib/enum';
 declare const roundSymbol: unique symbol;
 declare const roundIdSymbol: unique symbol;
 
 export type RoundId = Branded<number, typeof roundIdSymbol>;
 
-export enum RoundStage {
-  Preliminary = 'P',
-  Elimination = 'E',
-}
+export const RoundStage = {
+  Preliminary: 'P',
+  Elimination: 'E',
+} as const;
 
-export enum RoundDrawType {
-  Random = 'R',
-  Manual = 'M',
-  RoundRobin = 'D',
-  PowerPaired = 'P',
-  Elimination = 'E',
-  Seeded = 'S',
-}
+export type RoundStage = Enumify<typeof RoundStage>;
 
-export enum RoundDrawStatus {
-  None = 'N',
-  Draft = 'D',
-  Confirmed = 'C',
-  TeamsReleased = 'T',
-  Released = 'R',
-}
+export const RoundDrawType = {
+  Random: 'R',
+  Manual: 'M',
+  RoundRobin: 'D',
+  PowerPaired: 'P',
+  Elimination: 'E',
+  Seeded: 'S',
+} as const;
 
-export enum RoundMotionsStatus {
-  NotReleased = 'N',
-  InfoSlidesReleased = 'I',
-  MotionsReleased = 'M',
-}
+export type RoundDrawType = Enumify<typeof RoundDrawType>;
+
+export const RoundDrawStatus = {
+  None: 'N',
+  Draft: 'D',
+  Confirmed: 'C',
+  TeamsReleased: 'T',
+  Released: 'R',
+} as const;
+
+export type RoundDrawStatus = Enumify<typeof RoundDrawStatus>;
+
+export const RoundMotionsStatus = {
+  NotReleased: 'N',
+  InfoSlidesReleased: 'I',
+  MotionsReleased: 'M',
+} as const;
+
+export type RoundMotionsStatus = Enumify<typeof RoundMotionsStatus>;
 
 export type Round = Branded<
   {

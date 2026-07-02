@@ -29,11 +29,13 @@ export const Tournament = {
     name,
     tabId,
     slug,
+    shortName,
   }: {
     baseUrl: string;
     tabId: number;
     name: string;
     slug: string;
+    shortName: string;
   }): Tournament =>
     Tournament.init({
       id: TournamentId.create(),
@@ -41,5 +43,6 @@ export const Tournament = {
       tabId,
       name,
       slug,
+      shortName,
     }),
 };

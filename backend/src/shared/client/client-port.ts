@@ -1,14 +1,22 @@
-import { Tournament } from '../domain/tournament';
-import { Institution, InstitutionId } from '../domain/institution';
+import {
+  Tournament,
+  Institution,
+  InstitutionId,
+  Team,
+  TeamId,
+  Speaker,
+  SpeakerId,
+  Venue,
+  VenueId,
+  BreakCategory,
+  BreakCategoryId,
+  SpeakerCategory,
+  SpeakerCategoryId,
+} from '../domain';
 import { ResultAsync } from 'neverthrow';
-import { Team, TeamId } from '../domain/team';
-import { Speaker, SpeakerId } from '../domain/speaker';
 import { Branded, Unbranded, Brand } from 'src/lib/brand';
 import { ImmutableKeys, MutableKeys } from 'src/lib/mutable-keys';
 import { TabbycatError } from './error';
-import { Venue, VenueId } from '../domain/venue';
-import { BreakCategory, BreakCategoryId } from '../domain/break-category';
-import { SpeakerCategory, SpeakerCategoryId } from '../domain/speaker-category';
 
 type TabbycatResult<T> = ResultAsync<T, TabbycatError>;
 

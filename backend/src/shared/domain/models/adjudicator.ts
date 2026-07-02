@@ -1,6 +1,7 @@
 import { Branded, Struct } from 'src/lib/brand';
 import { TournamentId } from './tournament';
 import { InstitutionId } from './institution';
+import { TeamId } from './team';
 declare const adjudicatorSymbol: unique symbol;
 declare const adjudicatorIdSymbol: unique symbol;
 
@@ -15,6 +16,9 @@ export type Adjudicator = Branded<
     breaking: boolean;
     independent: boolean;
     adjCore: boolean;
+    institutionConflicts: InstitutionId[];
+    teamConflicts: TeamId[];
+    adjudicatorConflicts: AdjudicatorId[];
   },
   typeof adjudicatorSymbol
 >;
