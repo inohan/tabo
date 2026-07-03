@@ -1,0 +1,70 @@
+import { PickUnbranded } from 'src/lib/brand';
+import { ClientFactoryPort } from '../client/client-port';
+import {
+  Adjudicator,
+  AdjudicatorId,
+  NotFoundError,
+  SaveFailedError,
+  TournamentId,
+} from '../domain';
+import {
+  AdjudicatorRepositoryPort,
+  TournamentRepositoryPort,
+} from '../domain/repository';
+import { safeTry, ok, ResultAsync, Result } from 'neverthrow';
+import { TabbycatError } from '../client/error';
+import { AdjudicatorDTO } from '../client/output-dto';
+
+export class CreateAdjudicatorService {
+  constructor(
+    private readonly tournamentRepository: TournamentRepositoryPort,
+    private readonly adjudicatorRepository: AdjudicatorRepositoryPort,
+    private readonly tabbycatClientFactory: ClientFactoryPort,
+  ) {}
+
+  execute(
+    tournamentId: TournamentId,
+    adjudicator: PickUnbranded<Adjudicator, 'name' | 'institutionId'>,
+  ): ResultAsync<
+    AdjudicatorId,
+    NotFoundError | TabbycatError | SaveFailedError
+  > {
+    return safeTry(
+      async function* (this: CreateAdjudicatorService) {
+        const {
+          baseUrl,
+          token,
+          slug: tournamentSlug,
+        } = yield* await this.tournamentRepository.get(tournamentId);
+        const tcClient = this.tabbycatClientFactory({
+          baseUrl,
+          token,
+          tournamentSlug,
+        });
+        const adjudicatorDTO =
+          yield* await tcClient.adjudicators.create(adjudicator);
+        // yield* await this.sync(adjudicatorDTO, tournamentId);
+        return ok(adjudicatorDTO.id);
+      }.bind(this),
+    );
+  }
+
+  private sync(
+    adjudicatorDTO: AdjudicatorDTO,
+    tournamentId: TournamentId,
+  ): Promise<Result<void, SaveFailedError>> {
+    const adjudicatorEntity = Adjudicator.init({
+      tournamentId,
+      id: adjudicatorDTO.id,
+      name: adjudicatorDTO.name,
+      institutionId: adjudicatorDTO.institutionId,
+      breaking: adjudicatorDTO.breaking,
+      independent: adjudicatorDTO.independent,
+      adjCore: adjudicatorDTO.adjCore,
+      institutionConflicts: adjudicatorDTO.institutionConflicts,
+      teamConflicts: adjudicatorDTO.teamConflicts,
+      adjudicatorConflicts: adjudicatorDTO.adjudicatorConflicts,
+    });
+    return this.adjudicatorRepository.save(adjudicatorEntity);
+  }
+}

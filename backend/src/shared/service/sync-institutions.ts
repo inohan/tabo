@@ -60,16 +60,16 @@ export class SyncInstitutionsService {
             for (const dto of syncedInstitutionDtos) {
               const foundInst = oldInstitutionsMap.get(dto.id);
               if (foundInst !== undefined) {
-                foundInst.code = dto.code;
-                foundInst.name = dto.name;
-                yield* await institutionRepository.save(foundInst);
+                const updatedInst = Institution.init({
+                  tournamentId: foundInst.tournamentId,
+                  ...dto,
+                });
+                yield* await institutionRepository.save(updatedInst);
               } else {
                 yield* await institutionRepository.save(
                   Institution.init({
                     tournamentId: tournamentId,
-                    id: dto.id,
-                    name: dto.name,
-                    code: dto.code,
+                    ...dto,
                   }),
                 );
               }

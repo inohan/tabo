@@ -10,6 +10,8 @@ import {
   BreakCategoryId,
   SpeakerCategory,
   SpeakerCategoryId,
+  Adjudicator,
+  AdjudicatorId,
 } from '../domain';
 import * as out from './output-dto';
 import { ResultAsync } from 'neverthrow';
@@ -104,5 +106,16 @@ export interface ClientPort {
       speakerCategory: PickBranded<SpeakerCategory>,
     ) => TabbycatResult<out.SpeakerCategoryDTO>;
     delete: (speakerCategoryId: SpeakerCategoryId) => TabbycatResult<void>;
+  };
+  adjudicators: {
+    get: (adjudicatorId: AdjudicatorId) => TabbycatResult<out.AdjudicatorDTO>;
+    list: () => TabbycatResult<out.AdjudicatorDTO[]>;
+    create: (
+      adjudicator: PickUnbranded<Adjudicator, 'name' | 'institutionId'>,
+    ) => TabbycatResult<out.AdjudicatorDTO>;
+    update: (
+      adjudicator: PickBranded<Adjudicator>,
+    ) => TabbycatResult<out.AdjudicatorDTO>;
+    delete: (adjudicatorId: AdjudicatorId) => TabbycatResult<void>;
   };
 }

@@ -1,4 +1,5 @@
 import {
+  AdjudicatorsApi,
   BreakCategoriesApi,
   Configuration,
   InstitutionsApi,
@@ -18,6 +19,7 @@ import {
   VenueId,
   BreakCategoryId,
   SpeakerCategoryId,
+  AdjudicatorId,
 } from 'src/shared/domain';
 import { UrlSerializer } from './url';
 
@@ -415,6 +417,104 @@ export const generateClientV1_3: ClientFactoryPort = ({
           ).apiV1TournamentsSpeakerCategoriesDestroy({
             tournamentSlug,
             id: SpeakerCategoryId.plain(speakerCategoryId),
+          }),
+        ),
+    },
+    adjudicators: {
+      get: (adjudicatorId) =>
+        asResult(
+          new AdjudicatorsApi(config).apiV1TournamentsAdjudicatorsRetrieve({
+            tournamentSlug,
+            id: AdjudicatorId.plain(adjudicatorId),
+          }),
+          translator.adjudicator,
+        ),
+      list: () =>
+        asResult(
+          new AdjudicatorsApi(config).apiV1TournamentsAdjudicatorsList({
+            tournamentSlug,
+          }),
+          (adjudicators) => adjudicators.map(translator.adjudicator),
+        ),
+      create: ({
+        name,
+        institutionId,
+        breaking,
+        independent,
+        adjCore,
+        institutionConflicts,
+        teamConflicts,
+        adjudicatorConflicts,
+      }) =>
+        asResult(
+          new AdjudicatorsApi(config).apiV1TournamentsAdjudicatorsCreate({
+            tournamentSlug,
+            // @ts-expect-error _links is not being omitted properly due to casing
+            adjudicator: {
+              name,
+              institution:
+                institutionId !== null
+                  ? UrlSerializer.institution({ id: institutionId })
+                  : null,
+              institutionConflicts: (institutionConflicts ?? []).map((id) =>
+                UrlSerializer.institution({ id }),
+              ),
+              teamConflicts: (teamConflicts ?? []).map((id) =>
+                UrlSerializer.team({ tournamentSlug, id }),
+              ),
+              adjudicatorConflicts: (adjudicatorConflicts ?? []).map((id) =>
+                UrlSerializer.adjudicator({ tournamentSlug, id }),
+              ),
+              breaking,
+              independent,
+              adjCore,
+            },
+          }),
+          translator.adjudicator,
+        ),
+      update: ({
+        id,
+        name,
+        institutionId,
+        breaking,
+        independent,
+        adjCore,
+        institutionConflicts,
+        teamConflicts,
+        adjudicatorConflicts,
+      }) =>
+        asResult(
+          new AdjudicatorsApi(config).apiV1TournamentsAdjudicatorsCreate2({
+            tournamentSlug,
+            id: AdjudicatorId.plain(id),
+            // @ts-expect-error _links is not being omitted properly due to casing
+            adjudicator: {
+              name,
+              institution:
+                institutionId !== null
+                  ? UrlSerializer.institution({ id: institutionId })
+                  : null,
+              institutionConflicts: institutionConflicts.map((id) =>
+                UrlSerializer.institution({ id }),
+              ),
+              teamConflicts: teamConflicts.map((id) =>
+                UrlSerializer.team({ tournamentSlug, id }),
+              ),
+              adjudicatorConflicts: adjudicatorConflicts.map((id) =>
+                UrlSerializer.adjudicator({ tournamentSlug, id }),
+              ),
+              breaking,
+              independent,
+              adjCore,
+            },
+          }),
+          translator.adjudicator,
+        ),
+      delete: (adjudicatorId) =>
+        asResult(
+          new AdjudicatorsApi(config).apiV1TournamentsAdjudicatorsDestroy({
+            tournamentSlug,
+            id: AdjudicatorId.plain(adjudicatorId),
           }),
         ),
     },

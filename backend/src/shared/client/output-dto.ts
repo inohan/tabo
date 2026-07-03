@@ -6,7 +6,12 @@ export type TournamentDTO = OmitUnbranded<
   'tournamentId' | 'token'
 >;
 export type InstitutionDTO = OmitUnbranded<m.Institution, 'tournamentId'>;
-export type TeamDTO = OmitUnbranded<m.Team, 'tournamentId'>;
+export type TeamDTO = OmitUnbranded<m.Team, 'tournamentId' | 'speakers'> & {
+  speakers: OmitUnbranded<
+    m.Speaker,
+    'tournamentId' | 'institutionId' | 'teamId'
+  >[];
+};
 export type SpeakerDTO = OmitUnbranded<
   m.Speaker,
   'tournamentId' | 'institutionId'

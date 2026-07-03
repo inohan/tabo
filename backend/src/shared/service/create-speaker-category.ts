@@ -1,36 +1,36 @@
 import { PickUnbranded } from 'src/lib/brand';
 import { ClientFactoryPort } from '../client/client-port';
 import {
-  Institution,
-  InstitutionId,
   NotFoundError,
   SaveFailedError,
+  SpeakerCategory,
+  SpeakerCategoryId,
   TournamentId,
 } from '../domain';
 import {
-  InstitutionRepositoryPort,
+  SpeakerCategoryRepositoryPort,
   TournamentRepositoryPort,
 } from '../domain/repository';
 import { safeTry, ok, ResultAsync, Result } from 'neverthrow';
 import { TabbycatError } from '../client/error';
-import { InstitutionDTO } from '../client/output-dto';
+import { SpeakerCategoryDTO } from '../client/output-dto';
 
-export class CreateInstitutionService {
+export class CreateSpeakerCategoryService {
   constructor(
     private readonly tournamentRepository: TournamentRepositoryPort,
-    private readonly institutionRepository: InstitutionRepositoryPort,
+    private readonly speakerCategoryRepository: SpeakerCategoryRepositoryPort,
     private readonly tabbycatClientFactory: ClientFactoryPort,
   ) {}
 
   execute(
     tournamentId: TournamentId,
-    institution: PickUnbranded<Institution, 'name' | 'code'>,
+    speakerCategory: PickUnbranded<SpeakerCategory, 'name' | 'slug' | 'seq'>,
   ): ResultAsync<
-    InstitutionId,
+    SpeakerCategoryId,
     NotFoundError | TabbycatError | SaveFailedError
   > {
     return safeTry(
-      async function* (this: CreateInstitutionService) {
+      async function* (this: CreateSpeakerCategoryService) {
         const {
           baseUrl,
           token,
@@ -41,24 +41,25 @@ export class CreateInstitutionService {
           token,
           tournamentSlug,
         });
-        const institutionDTO =
-          yield* await tcClient.institutions.create(institution);
-        // yield* await this.sync(institutionDTO, tournamentId);
-        return ok(institutionDTO.id);
+        const speakerCategoryDTO =
+          yield* await tcClient.speakerCategories.create(speakerCategory);
+        // yield* await this.sync(speakerCategoryDTO, tournamentId);
+        return ok(speakerCategoryDTO.id);
       }.bind(this),
     );
   }
 
   private sync(
-    institutionDTO: InstitutionDTO,
+    speakerCategoryDTO: SpeakerCategoryDTO,
     tournamentId: TournamentId,
   ): Promise<Result<void, SaveFailedError>> {
-    const institutionEntity = Institution.init({
+    const speakerCategoryEntity = SpeakerCategory.init({
       tournamentId,
-      id: institutionDTO.id,
-      code: institutionDTO.code,
-      name: institutionDTO.name,
+      id: speakerCategoryDTO.id,
+      name: speakerCategoryDTO.name,
+      slug: speakerCategoryDTO.slug,
+      seq: speakerCategoryDTO.seq,
     });
-    return this.institutionRepository.save(institutionEntity);
+    return this.speakerCategoryRepository.save(speakerCategoryEntity);
   }
 }

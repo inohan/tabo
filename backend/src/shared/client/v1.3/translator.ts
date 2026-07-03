@@ -6,6 +6,7 @@ import {
   VenueId,
   BreakCategoryId,
   SpeakerCategoryId,
+  AdjudicatorId,
 } from 'src/shared/domain';
 import * as DTO from '../output-dto';
 import * as Tc from 'tabbycat-client/out/v1.3.0';
@@ -45,12 +46,15 @@ const TeamSchema = v.pipe(
       v.pipe(v.string(), v.transform(UrlDeserializer.institutionId)),
     ),
     speakers: v.array(
-      v.pipe(
-        v.object({
-          id: v.pipe(v.string(), v.transform(UrlDeserializer.speakerId)),
-        }),
-        v.transform(({ id }) => id),
-      ),
+      v.object({
+        id: v.pipe(v.number(), v.transform(SpeakerId.init)),
+        name: v.string(),
+        categories: v.array(
+          v.pipe(v.string(), v.transform(UrlDeserializer.speakerCategoryId)),
+        ),
+        anonymous: v.boolean(),
+        email: v.union([v.string(), v.null()]),
+      }),
     ),
     emoji: v.union([v.string(), v.null()]),
     codeName: v.string(),
@@ -93,10 +97,6 @@ const SpeakerSchema = v.pipe(
   v.object({
     id: v.pipe(v.number(), v.transform(SpeakerId.init)),
     name: v.string(),
-    institution: v.union([
-      v.pipe(v.string(), v.transform(UrlDeserializer.institutionId)),
-      v.null(),
-    ]),
     team: v.pipe(v.string(), v.transform(UrlDeserializer.teamId)),
     categories: v.array(
       v.pipe(v.string(), v.transform(UrlDeserializer.speakerCategoryId)),
@@ -104,17 +104,14 @@ const SpeakerSchema = v.pipe(
     anonymous: v.boolean(),
     email: v.union([v.string(), v.null()]),
   }),
-  v.transform(
-    ({ id, name, institution, team, categories, anonymous, email }) => ({
-      id,
-      name,
-      institution_id: institution,
-      teamId: team,
-      categories,
-      anonymous,
-      email,
-    }),
-  ),
+  v.transform(({ id, name, team, categories, anonymous, email }) => ({
+    id,
+    name,
+    teamId: team,
+    categories,
+    anonymous,
+    email,
+  })),
 );
 
 const VenueSchema = v.object({
@@ -142,6 +139,52 @@ const SpeakerCategorySchema = v.object({
   seq: v.number(),
 });
 
+const AdjudicatorSchema = v.pipe(
+  v.object({
+    id: v.pipe(v.number(), v.transform(AdjudicatorId.init)),
+    name: v.string(),
+    institution: v.union([
+      v.pipe(v.string(), v.transform(UrlDeserializer.institutionId)),
+      v.null(),
+    ]),
+    institutionConflicts: v.array(
+      v.pipe(v.string(), v.transform(UrlDeserializer.institutionId)),
+    ),
+    teamConflicts: v.array(
+      v.pipe(v.string(), v.transform(UrlDeserializer.teamId)),
+    ),
+    adjudicatorConflicts: v.array(
+      v.pipe(v.string(), v.transform(UrlDeserializer.adjudicatorId)),
+    ),
+    breaking: v.boolean(),
+    independent: v.boolean(),
+    adjCore: v.boolean(),
+  }),
+  v.transform(
+    ({
+      id,
+      name,
+      institution,
+      institutionConflicts,
+      teamConflicts,
+      adjudicatorConflicts,
+      breaking,
+      independent,
+      adjCore,
+    }) => ({
+      id,
+      name,
+      institutionId: institution,
+      institutionConflicts,
+      teamConflicts,
+      adjudicatorConflicts,
+      breaking,
+      independent,
+      adjCore,
+    }),
+  ),
+);
+
 const tryParse = <
   T extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>,
 >(
@@ -168,4 +211,6 @@ export const Translator = {
     tryParse(BreakCategorySchema, bc),
   speakerCategory: (sc: Tc.SpeakerCategory): DTO.SpeakerCategoryDTO =>
     tryParse(SpeakerCategorySchema, sc),
+  adjudicator: (adjudicator: Tc.Adjudicator): DTO.AdjudicatorDTO =>
+    tryParse(AdjudicatorSchema, adjudicator),
 };
