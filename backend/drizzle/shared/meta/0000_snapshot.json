@@ -1,0 +1,1333 @@
+{
+  "id": "49786c52-00a6-4d72-9f2d-f8c4afc2d5c0",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "shared.adjudicator_adjudicator_conflict": {
+      "name": "adjudicator_adjudicator_conflict",
+      "schema": "shared",
+      "columns": {
+        "tournament_id": {
+          "name": "tournament_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "adjudicator_a_id": {
+          "name": "adjudicator_a_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "adjudicator_b_id": {
+          "name": "adjudicator_b_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "adj_adj_conflict_a_fk": {
+          "name": "adj_adj_conflict_a_fk",
+          "tableFrom": "adjudicator_adjudicator_conflict",
+          "tableTo": "adjudicator",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "adjudicator_a_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "adj_adj_conflict_b_fk": {
+          "name": "adj_adj_conflict_b_fk",
+          "tableFrom": "adjudicator_adjudicator_conflict",
+          "tableTo": "adjudicator",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "adjudicator_b_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "adjudicator_adjudicator_conflict_tournament_id_adjudicator_a_id_adjudicator_b_id_pk": {
+          "name": "adjudicator_adjudicator_conflict_tournament_id_adjudicator_a_id_adjudicator_b_id_pk",
+          "columns": [
+            "tournament_id",
+            "adjudicator_a_id",
+            "adjudicator_b_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "shared.adjudicator_institution_conflict": {
+      "name": "adjudicator_institution_conflict",
+      "schema": "shared",
+      "columns": {
+        "tournament_id": {
+          "name": "tournament_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "adjudicator_id": {
+          "name": "adjudicator_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "institution_id": {
+          "name": "institution_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "adj_inst_conflict_adj_fk": {
+          "name": "adj_inst_conflict_adj_fk",
+          "tableFrom": "adjudicator_institution_conflict",
+          "tableTo": "adjudicator",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "adjudicator_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "adj_inst_conflict_inst_fk": {
+          "name": "adj_inst_conflict_inst_fk",
+          "tableFrom": "adjudicator_institution_conflict",
+          "tableTo": "institution",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "institution_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "adjudicator_institution_conflict_tournament_id_adjudicator_id_institution_id_pk": {
+          "name": "adjudicator_institution_conflict_tournament_id_adjudicator_id_institution_id_pk",
+          "columns": [
+            "tournament_id",
+            "adjudicator_id",
+            "institution_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "shared.adjudicator": {
+      "name": "adjudicator",
+      "schema": "shared",
+      "columns": {
+        "tournament_id": {
+          "name": "tournament_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "institution_id": {
+          "name": "institution_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "breaking": {
+          "name": "breaking",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "independent": {
+          "name": "independent",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "adj_core": {
+          "name": "adj_core",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "adjudicator_tournament_id_tournament_tournament_id_fk": {
+          "name": "adjudicator_tournament_id_tournament_tournament_id_fk",
+          "tableFrom": "adjudicator",
+          "tableTo": "tournament",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id"
+          ],
+          "columnsTo": [
+            "tournament_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "adjudicator_institution_fk": {
+          "name": "adjudicator_institution_fk",
+          "tableFrom": "adjudicator",
+          "tableTo": "institution",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "institution_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "set null (institution_id)",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "adjudicator_tournament_id_id_pk": {
+          "name": "adjudicator_tournament_id_id_pk",
+          "columns": [
+            "tournament_id",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "shared.adjudicator_team_conflict": {
+      "name": "adjudicator_team_conflict",
+      "schema": "shared",
+      "columns": {
+        "tournament_id": {
+          "name": "tournament_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "adjudicator_id": {
+          "name": "adjudicator_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "team_id": {
+          "name": "team_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "adj_team_conflict_adj_fk": {
+          "name": "adj_team_conflict_adj_fk",
+          "tableFrom": "adjudicator_team_conflict",
+          "tableTo": "adjudicator",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "adjudicator_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "adj_team_conflict_team_fk": {
+          "name": "adj_team_conflict_team_fk",
+          "tableFrom": "adjudicator_team_conflict",
+          "tableTo": "team",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "team_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "adjudicator_team_conflict_tournament_id_adjudicator_id_team_id_pk": {
+          "name": "adjudicator_team_conflict_tournament_id_adjudicator_id_team_id_pk",
+          "columns": [
+            "tournament_id",
+            "adjudicator_id",
+            "team_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "shared.break_category": {
+      "name": "break_category",
+      "schema": "shared",
+      "columns": {
+        "tournament_id": {
+          "name": "tournament_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seq": {
+          "name": "seq",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "break_size": {
+          "name": "break_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reserve_size": {
+          "name": "reserve_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_general": {
+          "name": "is_general",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "priority": {
+          "name": "priority",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "break_category_tournament_id_tournament_tournament_id_fk": {
+          "name": "break_category_tournament_id_tournament_tournament_id_fk",
+          "tableFrom": "break_category",
+          "tableTo": "tournament",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id"
+          ],
+          "columnsTo": [
+            "tournament_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "break_category_tournament_id_id_pk": {
+          "name": "break_category_tournament_id_id_pk",
+          "columns": [
+            "tournament_id",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "shared.institution": {
+      "name": "institution",
+      "schema": "shared",
+      "columns": {
+        "tournament_id": {
+          "name": "tournament_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "institution_tournament_id_tournament_tournament_id_fk": {
+          "name": "institution_tournament_id_tournament_tournament_id_fk",
+          "tableFrom": "institution",
+          "tableTo": "tournament",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id"
+          ],
+          "columnsTo": [
+            "tournament_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "institution_tournament_id_id_pk": {
+          "name": "institution_tournament_id_id_pk",
+          "columns": [
+            "tournament_id",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "shared.round": {
+      "name": "round",
+      "schema": "shared",
+      "columns": {
+        "tournament_id": {
+          "name": "tournament_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "break_category_id": {
+          "name": "break_category_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "motions_released": {
+          "name": "motions_released",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seq": {
+          "name": "seq",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completed": {
+          "name": "completed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "abbreviation": {
+          "name": "abbreviation",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stage": {
+          "name": "stage",
+          "type": "round_stage",
+          "typeSchema": "shared",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "draw_type": {
+          "name": "draw_type",
+          "type": "round_draw_type",
+          "typeSchema": "shared",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "draw_status": {
+          "name": "draw_status",
+          "type": "round_draw_status",
+          "typeSchema": "shared",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "feedback_weight": {
+          "name": "feedback_weight",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "silent": {
+          "name": "silent",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "motions_status": {
+          "name": "motions_status",
+          "type": "round_motions_status",
+          "typeSchema": "shared",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "weight": {
+          "name": "weight",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "round_tournament_id_tournament_tournament_id_fk": {
+          "name": "round_tournament_id_tournament_tournament_id_fk",
+          "tableFrom": "round",
+          "tableTo": "tournament",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id"
+          ],
+          "columnsTo": [
+            "tournament_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "round_break_category_fk": {
+          "name": "round_break_category_fk",
+          "tableFrom": "round",
+          "tableTo": "break_category",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "break_category_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "round_tournament_id_id_pk": {
+          "name": "round_tournament_id_id_pk",
+          "columns": [
+            "tournament_id",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "shared.speaker_category": {
+      "name": "speaker_category",
+      "schema": "shared",
+      "columns": {
+        "tournament_id": {
+          "name": "tournament_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seq": {
+          "name": "seq",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "speaker_category_tournament_id_tournament_tournament_id_fk": {
+          "name": "speaker_category_tournament_id_tournament_tournament_id_fk",
+          "tableFrom": "speaker_category",
+          "tableTo": "tournament",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id"
+          ],
+          "columnsTo": [
+            "tournament_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "speaker_category_tournament_id_id_pk": {
+          "name": "speaker_category_tournament_id_id_pk",
+          "columns": [
+            "tournament_id",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "shared.speaker_speaker_category": {
+      "name": "speaker_speaker_category",
+      "schema": "shared",
+      "columns": {
+        "tournament_id": {
+          "name": "tournament_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "speaker_id": {
+          "name": "speaker_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "speaker_category_id": {
+          "name": "speaker_category_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "speaker_sc_speaker_fk": {
+          "name": "speaker_sc_speaker_fk",
+          "tableFrom": "speaker_speaker_category",
+          "tableTo": "speaker",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "speaker_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "speaker_sc_sc_fk": {
+          "name": "speaker_sc_sc_fk",
+          "tableFrom": "speaker_speaker_category",
+          "tableTo": "speaker_category",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "speaker_category_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "speaker_speaker_category_tournament_id_speaker_id_speaker_category_id_pk": {
+          "name": "speaker_speaker_category_tournament_id_speaker_id_speaker_category_id_pk",
+          "columns": [
+            "tournament_id",
+            "speaker_id",
+            "speaker_category_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "shared.speaker": {
+      "name": "speaker",
+      "schema": "shared",
+      "columns": {
+        "tournament_id": {
+          "name": "tournament_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "institution_id": {
+          "name": "institution_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "team_id": {
+          "name": "team_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "anonymous": {
+          "name": "anonymous",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "speaker_tournament_id_tournament_tournament_id_fk": {
+          "name": "speaker_tournament_id_tournament_tournament_id_fk",
+          "tableFrom": "speaker",
+          "tableTo": "tournament",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id"
+          ],
+          "columnsTo": [
+            "tournament_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "speaker_team_fk": {
+          "name": "speaker_team_fk",
+          "tableFrom": "speaker",
+          "tableTo": "team",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "team_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "speaker_institution_fk": {
+          "name": "speaker_institution_fk",
+          "tableFrom": "speaker",
+          "tableTo": "institution",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "institution_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "set null (institution_id)",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "speaker_tournament_id_id_pk": {
+          "name": "speaker_tournament_id_id_pk",
+          "columns": [
+            "tournament_id",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "shared.team_break_category": {
+      "name": "team_break_category",
+      "schema": "shared",
+      "columns": {
+        "tournament_id": {
+          "name": "tournament_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "team_id": {
+          "name": "team_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "break_category_id": {
+          "name": "break_category_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "team_bc_team_fk": {
+          "name": "team_bc_team_fk",
+          "tableFrom": "team_break_category",
+          "tableTo": "team",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "team_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "team_bc_bc_fk": {
+          "name": "team_bc_bc_fk",
+          "tableFrom": "team_break_category",
+          "tableTo": "break_category",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "break_category_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "team_break_category_tournament_id_team_id_break_category_id_pk": {
+          "name": "team_break_category_tournament_id_team_id_break_category_id_pk",
+          "columns": [
+            "tournament_id",
+            "team_id",
+            "break_category_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "shared.team_institution_conflict": {
+      "name": "team_institution_conflict",
+      "schema": "shared",
+      "columns": {
+        "tournament_id": {
+          "name": "tournament_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "team_id": {
+          "name": "team_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "institution_id": {
+          "name": "institution_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "team_institution_conflict_team_fk": {
+          "name": "team_institution_conflict_team_fk",
+          "tableFrom": "team_institution_conflict",
+          "tableTo": "team",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "team_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "team_institution_conflict_institution_fk": {
+          "name": "team_institution_conflict_institution_fk",
+          "tableFrom": "team_institution_conflict",
+          "tableTo": "institution",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "institution_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "team_institution_conflict_tournament_id_team_id_institution_id_pk": {
+          "name": "team_institution_conflict_tournament_id_team_id_institution_id_pk",
+          "columns": [
+            "tournament_id",
+            "team_id",
+            "institution_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "shared.team": {
+      "name": "team",
+      "schema": "shared",
+      "columns": {
+        "tournament_id": {
+          "name": "tournament_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reference": {
+          "name": "reference",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "short_reference": {
+          "name": "short_reference",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "institution_id": {
+          "name": "institution_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "emoji": {
+          "name": "emoji",
+          "type": "varchar(1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "code_name": {
+          "name": "code_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "use_institution_prefix": {
+          "name": "use_institution_prefix",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "short_name": {
+          "name": "short_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "long_name": {
+          "name": "long_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "team_tournament_id_tournament_tournament_id_fk": {
+          "name": "team_tournament_id_tournament_tournament_id_fk",
+          "tableFrom": "team",
+          "tableTo": "tournament",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id"
+          ],
+          "columnsTo": [
+            "tournament_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "team_institution_fk": {
+          "name": "team_institution_fk",
+          "tableFrom": "team",
+          "tableTo": "institution",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id",
+            "institution_id"
+          ],
+          "columnsTo": [
+            "tournament_id",
+            "id"
+          ],
+          "onDelete": "set null (institution_id)",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "team_tournament_id_id_pk": {
+          "name": "team_tournament_id_id_pk",
+          "columns": [
+            "tournament_id",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "shared.tournament": {
+      "name": "tournament",
+      "schema": "shared",
+      "columns": {
+        "tournament_id": {
+          "name": "tournament_id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "base_url": {
+          "name": "base_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "short_name": {
+          "name": "short_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "shared.venue": {
+      "name": "venue",
+      "schema": "shared",
+      "columns": {
+        "tournament_id": {
+          "name": "tournament_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "priority": {
+          "name": "priority",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "venue_tournament_id_tournament_tournament_id_fk": {
+          "name": "venue_tournament_id_tournament_tournament_id_fk",
+          "tableFrom": "venue",
+          "tableTo": "tournament",
+          "schemaTo": "shared",
+          "columnsFrom": [
+            "tournament_id"
+          ],
+          "columnsTo": [
+            "tournament_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "venue_tournament_id_id_pk": {
+          "name": "venue_tournament_id_id_pk",
+          "columns": [
+            "tournament_id",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "shared.round_draw_status": {
+      "name": "round_draw_status",
+      "schema": "shared",
+      "values": [
+        "N",
+        "D",
+        "C",
+        "T",
+        "R"
+      ]
+    },
+    "shared.round_draw_type": {
+      "name": "round_draw_type",
+      "schema": "shared",
+      "values": [
+        "R",
+        "M",
+        "D",
+        "P",
+        "E",
+        "S"
+      ]
+    },
+    "shared.round_motions_status": {
+      "name": "round_motions_status",
+      "schema": "shared",
+      "values": [
+        "N",
+        "I",
+        "M"
+      ]
+    },
+    "shared.round_stage": {
+      "name": "round_stage",
+      "schema": "shared",
+      "values": [
+        "P",
+        "E"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:18
+    volumes:
+      - pgdata:/var/lib/postgresql/18/docker
+    environment:
+      POSTGRES_PASSWORD: tabo123456
+      POSTGRES_USER: tabo
+      POSTGRES_DB: tabo
+    ports:
+      - '5432:5432'
+
+volumes:
+  pgdata:

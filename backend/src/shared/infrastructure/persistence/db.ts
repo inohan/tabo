@@ -25,11 +25,11 @@ interface DbSchema {
   round: Kyselify<typeof s.roundTable>;
 }
 
-export const db = new Kysely<DbSchema>({
-  dialect: new PostgresDialect({
-    pool: new Pool({ connectionString: process.env.DATABASE_URL, max: 8 }),
-  }),
-  plugins: [new CamelCasePlugin()],
-});
+// export const db = new Kysely<DbSchema>({
+//   dialect: new PostgresDialect({
+//     pool: new Pool({ connectionString: process.env.DATABASE_URL, max: 8 }),
+//   }),
+//   plugins: [new CamelCasePlugin()],
+// }).withSchema('shared');
 
-export type Db = typeof db;
+export type Db = Kysely<DbSchema>;

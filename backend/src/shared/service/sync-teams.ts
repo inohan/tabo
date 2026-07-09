@@ -16,7 +16,6 @@ import {
 } from '../domain/repository';
 import { TabbycatError } from '../client/error';
 import { omit } from 'src/lib/omit';
-import { dot } from 'node:test/reporters';
 
 export class SyncTeamsService {
   constructor(
