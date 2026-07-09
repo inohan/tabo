@@ -9,8 +9,10 @@ import {
   SaveFailedError,
 } from 'src/shared/domain';
 
-export class BreakCategoryRepository implements BreakCategoryRepositoryPort {
-  constructor(private readonly db: Db) {}
+export class BreakCategoryRepository extends BreakCategoryRepositoryPort {
+  constructor(private readonly db: Db) {
+    super();
+  }
 
   async get({
     tournamentId,

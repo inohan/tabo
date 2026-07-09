@@ -9,8 +9,10 @@ import {
   SaveFailedError,
 } from 'src/shared/domain';
 
-export class SpeakerCategoryRepository implements SpeakerCategoryRepositoryPort {
-  constructor(private readonly db: Db) {}
+export class SpeakerCategoryRepository extends SpeakerCategoryRepositoryPort {
+  constructor(private readonly db: Db) {
+    super();
+  }
 
   async get({
     tournamentId,

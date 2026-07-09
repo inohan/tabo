@@ -9,8 +9,10 @@ import {
   SaveFailedError,
 } from 'src/shared/domain';
 
-export class InstitutionRepository implements InstitutionRepositoryPort {
-  constructor(private readonly db: Db) {}
+export class InstitutionRepository extends InstitutionRepositoryPort {
+  constructor(private readonly db: Db) {
+    super();
+  }
 
   async get({
     tournamentId,

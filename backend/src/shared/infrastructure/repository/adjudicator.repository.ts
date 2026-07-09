@@ -12,8 +12,10 @@ import {
 } from 'src/shared/domain';
 import { sql } from 'kysely';
 
-export class AdjudicatorRepository implements AdjudicatorRepositoryPort {
-  constructor(private readonly db: Db) {}
+export class AdjudicatorRepository extends AdjudicatorRepositoryPort {
+  constructor(private readonly db: Db) {
+    super();
+  }
 
   async get({
     tournamentId,

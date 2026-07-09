@@ -19,8 +19,8 @@ export interface TransactionContext {
   adjudicatorRepository: AdjudicatorRepositoryPort;
 }
 
-export interface UnitOfWorkPort {
-  run<T, E>(
+export abstract class UnitOfWorkPort {
+  abstract run<T, E>(
     work: (ctx: TransactionContext) => ResultAsync<T, E>,
   ): ResultAsync<T, E | TransactionError>;
 }

@@ -13,8 +13,10 @@ import { SpeakerRepository } from './speaker.repository';
 import { TeamRepository } from './team.repository';
 import { TournamentRepository } from './tournament.repository';
 
-export class UnitOfWork implements UnitOfWorkPort {
-  constructor(private readonly db: Db) {}
+export class UnitOfWork extends UnitOfWorkPort {
+  constructor(private readonly db: Db) {
+    super();
+  }
 
   run<T, E>(
     work: (ctx: TransactionContext) => ResultAsync<T, E>,

@@ -2,14 +2,18 @@ import { Institution, InstitutionId, TournamentId } from '../models';
 import { Result } from 'neverthrow';
 import { NotFoundError, SaveFailedError } from '../error';
 
-export interface InstitutionRepositoryPort {
-  get: (id: {
+export abstract class InstitutionRepositoryPort {
+  abstract get(id: {
     tournamentId: TournamentId;
     institutionId: InstitutionId;
-  }) => Promise<Result<Institution, NotFoundError>>;
-  getByTournament: (
+  }): Promise<Result<Institution, NotFoundError>>;
+  abstract getByTournament(
     tournamentId: TournamentId,
-  ) => Promise<Result<Institution[], never>>;
-  save: (institution: Institution) => Promise<Result<void, SaveFailedError>>;
-  delete: (institution: Institution) => Promise<Result<void, NotFoundError>>;
+  ): Promise<Result<Institution[], never>>;
+  abstract save(
+    institution: Institution,
+  ): Promise<Result<void, SaveFailedError>>;
+  abstract delete(
+    institution: Institution,
+  ): Promise<Result<void, NotFoundError>>;
 }

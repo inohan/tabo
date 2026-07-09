@@ -2,8 +2,8 @@ import { Tournament, TournamentId } from '../models';
 import { Result } from 'neverthrow';
 import { NotFoundError, SaveFailedError } from '../error';
 
-export interface TournamentRepositoryPort {
-  get: (id: TournamentId) => Promise<Result<Tournament, NotFoundError>>;
-  save: (tournament: Tournament) => Promise<Result<void, SaveFailedError>>;
-  delete: (tournament: Tournament) => Promise<Result<void, NotFoundError>>;
+export abstract class TournamentRepositoryPort {
+  abstract get(id: TournamentId): Promise<Result<Tournament, NotFoundError>>;
+  abstract save(tournament: Tournament): Promise<Result<void, SaveFailedError>>;
+  abstract delete(tournament: Tournament): Promise<Result<void, NotFoundError>>;
 }

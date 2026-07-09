@@ -8,8 +8,10 @@ import {
   SaveFailedError,
 } from 'src/shared/domain';
 
-export class TournamentRepository implements TournamentRepositoryPort {
-  constructor(private readonly db: Db) {}
+export class TournamentRepository extends TournamentRepositoryPort {
+  constructor(private readonly db: Db) {
+    super();
+  }
 
   async get(id: TournamentId): Promise<Result<Tournament, NotFoundError>> {
     const tournament = await this.db

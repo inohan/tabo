@@ -13,8 +13,10 @@ import {
 } from 'src/shared/domain';
 import { sql } from 'kysely';
 
-export class SpeakerRepository implements SpeakerRepositoryPort {
-  constructor(private readonly db: Db) {}
+export class SpeakerRepository extends SpeakerRepositoryPort {
+  constructor(private readonly db: Db) {
+    super();
+  }
 
   async get({
     tournamentId,

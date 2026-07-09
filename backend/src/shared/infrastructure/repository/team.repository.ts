@@ -13,8 +13,10 @@ import {
 } from 'src/shared/domain';
 import { sql } from 'kysely';
 
-export class TeamRepository implements TeamRepositoryPort {
-  constructor(private readonly db: Db) {}
+export class TeamRepository extends TeamRepositoryPort {
+  constructor(private readonly db: Db) {
+    super();
+  }
 
   async get({
     tournamentId,
