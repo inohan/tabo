@@ -1,18 +1,11 @@
 import { PickUnbranded } from 'src/lib/brand';
 import { ClientFactoryPort } from '../client/client-port';
-import {
-  BreakCategory,
-  BreakCategoryId,
-  NotFoundError,
-  SaveFailedError,
-  TournamentId,
-} from '../domain';
+import { BreakCategory, TournamentId } from '../domain';
 import {
   BreakCategoryRepositoryPort,
   TournamentRepositoryPort,
 } from '../domain/repository';
-import { safeTry, ok, ResultAsync, Result } from 'neverthrow';
-import { TabbycatError } from '../client/error';
+import { safeTry, ok } from 'neverthrow';
 import { BreakCategoryDTO } from '../client/output-dto';
 
 export class CreateBreakCategoryService {
@@ -28,10 +21,11 @@ export class CreateBreakCategoryService {
       BreakCategory,
       'name' | 'slug' | 'seq' | 'breakSize' | 'isGeneral' | 'priority'
     >,
-  ): ResultAsync<
-    BreakCategoryId,
-    NotFoundError | TabbycatError | SaveFailedError
-  > {
+    option?: {
+      sync?: boolean;
+      failOnSyncFail?: boolean;
+    },
+  ) {
     return safeTry(
       async function* (this: CreateBreakCategoryService) {
         const {
@@ -45,17 +39,19 @@ export class CreateBreakCategoryService {
           tournamentSlug,
         });
         const breakCategoryDTO =
-          yield* await tcClient.breakCategories.create(breakCategory);
-        // yield* await this.sync(breakCategoryDTO, tournamentId);
+          yield* await tcClient.createBreakCategory(breakCategory);
+        if (option?.sync ?? true) {
+          const syncResult = await this.sync(breakCategoryDTO, tournamentId);
+          if (option?.failOnSyncFail ?? false) {
+            yield* syncResult;
+          }
+        }
         return ok(breakCategoryDTO.id);
       }.bind(this),
     );
   }
 
-  private sync(
-    breakCategoryDTO: BreakCategoryDTO,
-    tournamentId: TournamentId,
-  ): Promise<Result<void, SaveFailedError>> {
+  private sync(breakCategoryDTO: BreakCategoryDTO, tournamentId: TournamentId) {
     const breakCategoryEntity = BreakCategory.init({
       tournamentId,
       id: breakCategoryDTO.id,

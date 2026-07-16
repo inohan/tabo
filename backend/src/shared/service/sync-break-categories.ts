@@ -7,11 +7,7 @@ import {
   SaveFailedError,
   TournamentId,
 } from '../domain';
-import {
-  TournamentRepositoryPort,
-  TransactionError,
-  UnitOfWorkPort,
-} from '../domain/repository';
+import { TournamentRepositoryPort, UnitOfWorkPort } from '../domain/repository';
 import { TabbycatError } from '../client/error';
 
 export class SyncBreakCategoriesService {
@@ -23,14 +19,8 @@ export class SyncBreakCategoriesService {
 
   execute(
     tournamentId: TournamentId,
-  ): ResultAsync<
-    void,
-    NotFoundError | TabbycatError | SaveFailedError | TransactionError
-  > {
-    return safeTry<
-      void,
-      NotFoundError | TabbycatError | SaveFailedError | TransactionError
-    >(
+  ): ResultAsync<void, NotFoundError | TabbycatError | SaveFailedError> {
+    return safeTry(
       async function* (this: SyncBreakCategoriesService) {
         const {
           baseUrl,
@@ -43,7 +33,7 @@ export class SyncBreakCategoriesService {
           tournamentSlug,
         });
         const syncedBreakCategoryDtos =
-          yield* await tcClient.breakCategories.list();
+          yield* await tcClient.listBreakCategories();
         const syncedBreakCategoryIdSet = new Set(
           syncedBreakCategoryDtos.map((bc) => bc.id),
         );

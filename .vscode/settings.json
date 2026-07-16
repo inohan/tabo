@@ -1,4 +1,9 @@
 {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "js/ts.preferences.autoImportSpecifierExcludeRegexes": [
+    "^assert$",
+    "^node:assert",
+    "^assert/strict$"
+  ]
 }

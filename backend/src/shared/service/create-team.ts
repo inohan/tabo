@@ -8,11 +8,7 @@ import {
   TeamId,
   TournamentId,
 } from '../domain';
-import {
-  TournamentRepositoryPort,
-  TransactionError,
-  UnitOfWorkPort,
-} from '../domain/repository';
+import { TournamentRepositoryPort, UnitOfWorkPort } from '../domain/repository';
 import { safeTry, ok, ResultAsync, Result } from 'neverthrow';
 import { TabbycatError } from '../client/error';
 import { TeamDTO } from '../client/output-dto';
@@ -36,10 +32,11 @@ export class CreateTeamService {
         'institutionId' | 'teamId'
       >[];
     },
-  ): ResultAsync<
-    TeamId,
-    NotFoundError | TabbycatError | SaveFailedError | TransactionError
-  > {
+    option?: {
+      sync?: boolean;
+      failOnSyncFail?: boolean;
+    },
+  ) {
     return safeTry(
       async function* (this: CreateTeamService) {
         const {
@@ -52,17 +49,20 @@ export class CreateTeamService {
           token,
           tournamentSlug,
         });
-        const teamDTO = yield* await tcClient.teams.create(team);
+        const teamDTO = yield* await tcClient.createTeam(team);
+        if (option?.sync ?? true) {
+          const syncResult = await this.sync(teamDTO, tournamentId);
+          if (option?.failOnSyncFail ?? false) {
+            yield* syncResult;
+          }
+        }
         // yield* await this.sync(teamDTO, tournamentId);
         return ok(teamDTO.id);
       }.bind(this),
     );
   }
 
-  private async sync(
-    teamDTO: TeamDTO,
-    tournamentId: TournamentId,
-  ): Promise<Result<void, SaveFailedError | TransactionError>> {
+  private async sync(teamDTO: TeamDTO, tournamentId: TournamentId) {
     const teamEntity = Team.init({
       tournamentId,
       id: teamDTO.id,

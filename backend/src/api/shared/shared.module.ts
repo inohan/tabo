@@ -12,6 +12,10 @@ import {
 } from '@shared/domain/repository';
 import { Db as SharedDb } from '@shared/infrastructure/persistence/db';
 import {
+  InstitutionQuery,
+  TournamentQuery,
+} from '@shared/infrastructure/query';
+import {
   AdjudicatorRepository,
   BreakCategoryRepository,
   InstitutionRepository,
@@ -29,6 +33,12 @@ import {
   CreateSpeakerService,
   CreateTeamService,
   CreateTournamentService,
+  GetInstitutionService,
+  GetTournamentService,
+  ListInstitutionsService,
+  ListTournamentsService,
+  SyncInstitutionsService,
+  VerifyTournamentService,
 } from '@shared/service';
 import { CamelCasePlugin, Kysely, PostgresDialect } from 'kysely';
 import { Pool } from 'pg';
@@ -65,6 +75,12 @@ const provideRepository = <T>(
   inject: [SHARED_DB],
 });
 
+const provideQuery = <T>(cls: new (db: SharedDb) => T) => ({
+  provide: cls,
+  useFactory: (db: SharedDb) => new cls(db),
+  inject: [SHARED_DB],
+});
+
 const repositoryProviders = [
   provideRepository(AdjudicatorRepositoryPort, AdjudicatorRepository),
   provideRepository(BreakCategoryRepositoryPort, BreakCategoryRepository),
@@ -74,6 +90,8 @@ const repositoryProviders = [
   provideRepository(TeamRepositoryPort, TeamRepository),
   provideRepository(TournamentRepositoryPort, TournamentRepository),
   provideRepository(UnitOfWorkPort, UnitOfWork),
+  provideQuery(TournamentQuery),
+  provideQuery(InstitutionQuery),
 ] as const;
 
 type Providers = [
@@ -142,6 +160,16 @@ const serviceProviders = [
   ]),
   provideService(CreateTournamentService, [
     TournamentRepositoryPort,
+    TABBYCAT_CLIENT_FACTORY,
+  ]),
+  provideService(GetTournamentService, [TournamentQuery]),
+  provideService(ListTournamentsService, [TournamentQuery]),
+  provideService(VerifyTournamentService, [TABBYCAT_CLIENT_FACTORY]),
+  provideService(GetInstitutionService, [InstitutionQuery]),
+  provideService(ListInstitutionsService, [InstitutionQuery]),
+  provideService(SyncInstitutionsService, [
+    TournamentRepositoryPort,
+    UnitOfWorkPort,
     TABBYCAT_CLIENT_FACTORY,
   ]),
 ] as const;

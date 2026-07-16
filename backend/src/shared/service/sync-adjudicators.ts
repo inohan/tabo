@@ -7,11 +7,7 @@ import {
   SaveFailedError,
   TournamentId,
 } from '../domain';
-import {
-  TournamentRepositoryPort,
-  TransactionError,
-  UnitOfWorkPort,
-} from '../domain/repository';
+import { TournamentRepositoryPort, UnitOfWorkPort } from '../domain/repository';
 import { TabbycatError } from '../client/error';
 
 export class SyncAdjudicatorsService {
@@ -23,14 +19,8 @@ export class SyncAdjudicatorsService {
 
   execute(
     tournamentId: TournamentId,
-  ): ResultAsync<
-    void,
-    NotFoundError | TabbycatError | SaveFailedError | TransactionError
-  > {
-    return safeTry<
-      void,
-      NotFoundError | TabbycatError | SaveFailedError | TransactionError
-    >(
+  ): ResultAsync<void, NotFoundError | TabbycatError | SaveFailedError> {
+    return safeTry(
       async function* (this: SyncAdjudicatorsService) {
         const {
           baseUrl,
@@ -42,7 +32,7 @@ export class SyncAdjudicatorsService {
           token,
           tournamentSlug,
         });
-        const syncedAdjudicatorDtos = yield* await tcClient.adjudicators.list();
+        const syncedAdjudicatorDtos = yield* await tcClient.listAdjudicator();
         const syncedAdjudicatorIdSet = new Set(
           syncedAdjudicatorDtos.map((adjudicator) => adjudicator.id),
         );

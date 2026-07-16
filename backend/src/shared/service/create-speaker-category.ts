@@ -1,18 +1,11 @@
 import { PickUnbranded } from 'src/lib/brand';
 import { ClientFactoryPort } from '../client/client-port';
-import {
-  NotFoundError,
-  SaveFailedError,
-  SpeakerCategory,
-  SpeakerCategoryId,
-  TournamentId,
-} from '../domain';
+import { SpeakerCategory, TournamentId } from '../domain';
 import {
   SpeakerCategoryRepositoryPort,
   TournamentRepositoryPort,
 } from '../domain/repository';
-import { safeTry, ok, ResultAsync, Result } from 'neverthrow';
-import { TabbycatError } from '../client/error';
+import { safeTry, ok } from 'neverthrow';
 import { SpeakerCategoryDTO } from '../client/output-dto';
 
 export class CreateSpeakerCategoryService {
@@ -25,10 +18,11 @@ export class CreateSpeakerCategoryService {
   execute(
     tournamentId: TournamentId,
     speakerCategory: PickUnbranded<SpeakerCategory, 'name' | 'slug' | 'seq'>,
-  ): ResultAsync<
-    SpeakerCategoryId,
-    NotFoundError | TabbycatError | SaveFailedError
-  > {
+    option?: {
+      sync?: boolean;
+      failOnSyncFail?: boolean;
+    },
+  ) {
     return safeTry(
       async function* (this: CreateSpeakerCategoryService) {
         const {
@@ -42,8 +36,13 @@ export class CreateSpeakerCategoryService {
           tournamentSlug,
         });
         const speakerCategoryDTO =
-          yield* await tcClient.speakerCategories.create(speakerCategory);
-        // yield* await this.sync(speakerCategoryDTO, tournamentId);
+          yield* await tcClient.createSpeakerCategory(speakerCategory);
+        if (option?.sync ?? true) {
+          const syncResult = await this.sync(speakerCategoryDTO, tournamentId);
+          if (option?.failOnSyncFail ?? false) {
+            yield* syncResult;
+          }
+        }
         return ok(speakerCategoryDTO.id);
       }.bind(this),
     );
@@ -52,7 +51,7 @@ export class CreateSpeakerCategoryService {
   private sync(
     speakerCategoryDTO: SpeakerCategoryDTO,
     tournamentId: TournamentId,
-  ): Promise<Result<void, SaveFailedError>> {
+  ) {
     const speakerCategoryEntity = SpeakerCategory.init({
       tournamentId,
       id: speakerCategoryDTO.id,

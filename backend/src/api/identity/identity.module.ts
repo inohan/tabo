@@ -1,5 +1,8 @@
 import { IdentityDb } from '@identity/infrastructure/persistence/db';
-import { ListTournamentService } from '@identity/service/list-tournaments';
+import {
+  ListOrganizationTournamentService,
+  AddOrganizationTournamentService,
+} from '@identity/service';
 import { Module } from '@nestjs/common';
 import { CamelCasePlugin, Kysely, PostgresDialect } from 'kysely';
 import { Pool } from 'pg';
@@ -10,7 +13,7 @@ const IDENTITY_DB = Symbol('IDENTITY_DB');
   providers: [
     {
       provide: IDENTITY_DB,
-      useFactory: () => {
+      useFactory: () =>
         new Kysely({
           dialect: new PostgresDialect({
             pool: new Pool({
@@ -20,15 +23,22 @@ const IDENTITY_DB = Symbol('IDENTITY_DB');
             }),
           }),
           plugins: [new CamelCasePlugin()],
-        });
-      },
+        }),
     },
     {
-      provide: ListTournamentService,
-      useFactory: (db: IdentityDb) => new ListTournamentService(db),
+      provide: ListOrganizationTournamentService,
+      useFactory: (db: IdentityDb) => new ListOrganizationTournamentService(db),
+      inject: [IDENTITY_DB],
+    },
+    {
+      provide: AddOrganizationTournamentService,
+      useFactory: (db: IdentityDb) => new AddOrganizationTournamentService(db),
       inject: [IDENTITY_DB],
     },
   ],
-  exports: [ListTournamentService],
+  exports: [
+    ListOrganizationTournamentService,
+    AddOrganizationTournamentService,
+  ],
 })
 export class IdentityModule {}

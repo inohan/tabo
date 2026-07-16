@@ -1,4 +1,3 @@
-import { parseTournamentUrl } from 'src/lib/url';
 import {
   InstitutionId,
   TeamId,
@@ -18,7 +17,6 @@ import { TabbycatError } from '../error';
 
 const TournamentSchema = v.object({
   id: v.number(),
-  baseUrl: v.pipe(v.string(), v.transform(parseTournamentUrl)),
   slug: v.string(),
   name: v.string(),
   shortName: v.string(),
@@ -190,27 +188,43 @@ const tryParse = <
 >(
   schema: T,
   object: unknown,
+  response?: Response,
 ): v.InferOutput<T> => {
   try {
     return v.parse(schema, object);
   } catch (error) {
-    throw new TabbycatError(undefined, `parsing failed: ${error as Error}`);
+    throw new TabbycatError(
+      `Parsing failed: ${(error as Error).message}`,
+      response,
+    );
   }
 };
 
-export const Translator = {
-  tournament: (tournament: Tc.Tournament): DTO.TournamentDTO =>
-    tryParse(TournamentSchema, tournament),
-  institution: (institution: Tc.Institution): DTO.InstitutionDTO =>
-    tryParse(InstitutionSchema, institution),
-  team: (team: Tc.Team): DTO.TeamDTO => tryParse(TeamSchema, team),
-  speaker: (speaker: Tc.Speaker): DTO.SpeakerDTO =>
-    tryParse(SpeakerSchema, speaker),
-  venue: (venue: Tc.Venue): DTO.VenueDTO => tryParse(VenueSchema, venue),
-  breakCategory: (bc: Tc.BreakCategory): DTO.BreakCategoryDTO =>
-    tryParse(BreakCategorySchema, bc),
-  speakerCategory: (sc: Tc.SpeakerCategory): DTO.SpeakerCategoryDTO =>
-    tryParse(SpeakerCategorySchema, sc),
-  adjudicator: (adjudicator: Tc.Adjudicator): DTO.AdjudicatorDTO =>
-    tryParse(AdjudicatorSchema, adjudicator),
-};
+export const tournament = (
+  tournament: Tc.Tournament,
+  response?: Response,
+): DTO.TournamentDTO => tryParse(TournamentSchema, tournament, response);
+export const institution = (
+  institution: Tc.Institution,
+  response?: Response,
+): DTO.InstitutionDTO => tryParse(InstitutionSchema, institution, response);
+export const team = (team: Tc.Team, response?: Response): DTO.TeamDTO =>
+  tryParse(TeamSchema, team, response);
+export const speaker = (
+  speaker: Tc.Speaker,
+  response?: Response,
+): DTO.SpeakerDTO => tryParse(SpeakerSchema, speaker, response);
+export const venue = (venue: Tc.Venue, response?: Response): DTO.VenueDTO =>
+  tryParse(VenueSchema, venue, response);
+export const breakCategory = (
+  bc: Tc.BreakCategory,
+  response?: Response,
+): DTO.BreakCategoryDTO => tryParse(BreakCategorySchema, bc, response);
+export const speakerCategory = (
+  sc: Tc.SpeakerCategory,
+  response?: Response,
+): DTO.SpeakerCategoryDTO => tryParse(SpeakerCategorySchema, sc, response);
+export const adjudicator = (
+  adjudicator: Tc.Adjudicator,
+  response?: Response,
+): DTO.AdjudicatorDTO => tryParse(AdjudicatorSchema, adjudicator, response);

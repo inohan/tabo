@@ -1,18 +1,11 @@
 import { PickUnbranded } from 'src/lib/brand';
 import { ClientFactoryPort } from '../client/client-port';
-import {
-  Adjudicator,
-  AdjudicatorId,
-  NotFoundError,
-  SaveFailedError,
-  TournamentId,
-} from '../domain';
+import { Adjudicator, TournamentId } from '../domain';
 import {
   AdjudicatorRepositoryPort,
   TournamentRepositoryPort,
 } from '../domain/repository';
-import { safeTry, ok, ResultAsync, Result } from 'neverthrow';
-import { TabbycatError } from '../client/error';
+import { safeTry, ok } from 'neverthrow';
 import { AdjudicatorDTO } from '../client/output-dto';
 
 export class CreateAdjudicatorService {
@@ -25,10 +18,11 @@ export class CreateAdjudicatorService {
   execute(
     tournamentId: TournamentId,
     adjudicator: PickUnbranded<Adjudicator, 'name' | 'institutionId'>,
-  ): ResultAsync<
-    AdjudicatorId,
-    NotFoundError | TabbycatError | SaveFailedError
-  > {
+    option?: {
+      sync?: boolean;
+      failOnSyncFail?: boolean;
+    },
+  ) {
     return safeTry(
       async function* (this: CreateAdjudicatorService) {
         const {
@@ -42,17 +36,19 @@ export class CreateAdjudicatorService {
           tournamentSlug,
         });
         const adjudicatorDTO =
-          yield* await tcClient.adjudicators.create(adjudicator);
-        // yield* await this.sync(adjudicatorDTO, tournamentId);
+          yield* await tcClient.createAdjudicator(adjudicator);
+        if (option?.sync ?? true) {
+          const syncResult = await this.sync(adjudicatorDTO, tournamentId);
+          if (option?.failOnSyncFail ?? false) {
+            yield* syncResult;
+          }
+        }
         return ok(adjudicatorDTO.id);
       }.bind(this),
     );
   }
 
-  private sync(
-    adjudicatorDTO: AdjudicatorDTO,
-    tournamentId: TournamentId,
-  ): Promise<Result<void, SaveFailedError>> {
+  private sync(adjudicatorDTO: AdjudicatorDTO, tournamentId: TournamentId) {
     const adjudicatorEntity = Adjudicator.init({
       tournamentId,
       id: adjudicatorDTO.id,

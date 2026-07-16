@@ -1,18 +1,11 @@
 import { PickUnbranded } from 'src/lib/brand';
 import { ClientFactoryPort } from '../client/client-port';
-import {
-  Institution,
-  InstitutionId,
-  NotFoundError,
-  SaveFailedError,
-  TournamentId,
-} from '../domain';
+import { Institution, TournamentId } from '../domain';
 import {
   InstitutionRepositoryPort,
   TournamentRepositoryPort,
 } from '../domain/repository';
-import { safeTry, ok, ResultAsync, Result } from 'neverthrow';
-import { TabbycatError } from '../client/error';
+import { safeTry, ok } from 'neverthrow';
 import { InstitutionDTO } from '../client/output-dto';
 
 export class CreateInstitutionService {
@@ -25,10 +18,11 @@ export class CreateInstitutionService {
   execute(
     tournamentId: TournamentId,
     institution: PickUnbranded<Institution, 'name' | 'code'>,
-  ): ResultAsync<
-    InstitutionId,
-    NotFoundError | TabbycatError | SaveFailedError
-  > {
+    option?: {
+      sync?: boolean;
+      failOnSyncFail?: boolean;
+    },
+  ) {
     return safeTry(
       async function* (this: CreateInstitutionService) {
         const {
@@ -42,17 +36,20 @@ export class CreateInstitutionService {
           tournamentSlug,
         });
         const institutionDTO =
-          yield* await tcClient.institutions.create(institution);
-        // yield* await this.sync(institutionDTO, tournamentId);
+          yield* await tcClient.createInstitution(institution);
+        if (option?.sync ?? true) {
+          const syncResult = await this.sync(institutionDTO, tournamentId);
+          if (option?.failOnSyncFail ?? false) {
+            yield* syncResult;
+          }
+        }
+
         return ok(institutionDTO.id);
       }.bind(this),
     );
   }
 
-  private sync(
-    institutionDTO: InstitutionDTO,
-    tournamentId: TournamentId,
-  ): Promise<Result<void, SaveFailedError>> {
+  private sync(institutionDTO: InstitutionDTO, tournamentId: TournamentId) {
     const institutionEntity = Institution.init({
       tournamentId,
       id: institutionDTO.id,

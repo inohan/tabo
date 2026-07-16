@@ -13,14 +13,18 @@ export class TournamentRepository extends TournamentRepositoryPort {
     super();
   }
 
-  async get(id: TournamentId): Promise<Result<Tournament, NotFoundError>> {
+  async get(
+    tournamentId: TournamentId,
+  ): Promise<Result<Tournament, NotFoundError>> {
     const tournament = await this.db
       .selectFrom('tournament')
       .selectAll()
-      .where('tournamentId', '=', id)
+      .where('tournamentId', '=', tournamentId)
       .executeTakeFirst();
     if (tournament === undefined) {
-      return err(new NotFoundError(`Tournament with id ${id} not found`));
+      return err(
+        new NotFoundError(`Tournament with id ${tournamentId} not found`),
+      );
     }
     return ok(toModel(tournament));
   }
@@ -48,7 +52,7 @@ export class TournamentRepository extends TournamentRepositoryPort {
         updatedAt: null,
       })
       .onConflict((oc) =>
-        oc.column('id').doUpdateSet({
+        oc.column('tournamentId').doUpdateSet({
           baseUrl,
           name,
           shortName,
@@ -65,13 +69,17 @@ export class TournamentRepository extends TournamentRepositoryPort {
     return ok();
   }
 
-  async delete({ id }: Tournament): Promise<Result<void, NotFoundError>> {
+  async delete({
+    tournamentId,
+  }: Tournament): Promise<Result<void, NotFoundError>> {
     const deleted = await this.db
       .deleteFrom('tournament')
-      .where('id', '=', id)
+      .where('tournamentId', '=', tournamentId)
       .executeTakeFirst();
     if (deleted.numDeletedRows === 0n) {
-      return err(new NotFoundError(`Tournament with id ${id} not found`));
+      return err(
+        new NotFoundError(`Tournament with id ${tournamentId} not found`),
+      );
     }
     return ok();
   }

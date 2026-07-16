@@ -9,7 +9,7 @@ export const tournament = pgTable(
     organizationId: text()
       .notNull()
       .references(() => organization.id),
-    tournamentId: varchar().notNull().primaryKey(),
+    tournamentId: varchar().notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.organizationId, table.tournamentId] }),

@@ -10,5 +10,5 @@ export const statement = {
 type AllPermissions = typeof statement;
 
 export type Permission = {
-  -readonly [K in keyof AllPermissions]?: AllPermissions[K][number][];
+  readonly [K in keyof AllPermissions]?: AllPermissions[K][number][];
 };

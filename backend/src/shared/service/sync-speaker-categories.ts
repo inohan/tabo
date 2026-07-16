@@ -7,11 +7,7 @@ import {
   SpeakerCategoryId,
   TournamentId,
 } from '../domain';
-import {
-  TournamentRepositoryPort,
-  TransactionError,
-  UnitOfWorkPort,
-} from '../domain/repository';
+import { TournamentRepositoryPort, UnitOfWorkPort } from '../domain/repository';
 import { TabbycatError } from '../client/error';
 
 export class SyncSpeakerCategoriesService {
@@ -23,14 +19,8 @@ export class SyncSpeakerCategoriesService {
 
   execute(
     tournamentId: TournamentId,
-  ): ResultAsync<
-    void,
-    NotFoundError | TabbycatError | SaveFailedError | TransactionError
-  > {
-    return safeTry<
-      void,
-      NotFoundError | TabbycatError | SaveFailedError | TransactionError
-    >(
+  ): ResultAsync<void, NotFoundError | TabbycatError | SaveFailedError> {
+    return safeTry(
       async function* (this: SyncSpeakerCategoriesService) {
         const {
           baseUrl,
@@ -43,7 +33,7 @@ export class SyncSpeakerCategoriesService {
           tournamentSlug,
         });
         const syncedSpeakerCategoryDtos =
-          yield* await tcClient.speakerCategories.list();
+          yield* await tcClient.listSpeakerCategories();
         const syncedSpeakerCategoryIdSet = new Set(
           syncedSpeakerCategoryDtos.map((sc) => sc.id),
         );

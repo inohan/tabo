@@ -28,7 +28,11 @@ export class CreateSpeakerService {
       Speaker,
       'name' | 'teamId' | 'categories' | 'institutionId'
     >,
-  ): ResultAsync<SpeakerId, NotFoundError | TabbycatError | SaveFailedError> {
+    option?: {
+      sync?: boolean;
+      failOnSyncFail?: boolean;
+    },
+  ) {
     return safeTry(
       async function* (this: CreateSpeakerService) {
         const {
@@ -43,17 +47,19 @@ export class CreateSpeakerService {
         });
         // Speaker institution is not tracked by Tabbycat; it is derived from
         // the speaker's team, so it is not sent to the API.
-        const speakerDTO = yield* await tcClient.speakers.create(speaker);
-        // yield* await this.sync(speakerDTO, tournamentId);
+        const speakerDTO = yield* await tcClient.createSpeaker(speaker);
+        if (option?.sync ?? true) {
+          const syncResult = await this.sync(speakerDTO, tournamentId);
+          if (option?.failOnSyncFail ?? false) {
+            yield* syncResult;
+          }
+        }
         return ok(speakerDTO.id);
       }.bind(this),
     );
   }
 
-  sync(
-    speakerDTO: SpeakerDTO,
-    tournamentId: TournamentId,
-  ): Promise<Result<void, SaveFailedError>> {
+  sync(speakerDTO: SpeakerDTO, tournamentId: TournamentId) {
     const speakerEntity = Speaker.init({
       tournamentId,
       id: speakerDTO.id,

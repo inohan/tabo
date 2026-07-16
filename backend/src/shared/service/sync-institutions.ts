@@ -7,11 +7,7 @@ import {
   SaveFailedError,
   TournamentId,
 } from '../domain';
-import {
-  TournamentRepositoryPort,
-  TransactionError,
-  UnitOfWorkPort,
-} from '../domain/repository';
+import { TournamentRepositoryPort, UnitOfWorkPort } from '../domain/repository';
 import { TabbycatError } from '../client/error';
 
 export class SyncInstitutionsService {
@@ -23,10 +19,7 @@ export class SyncInstitutionsService {
 
   execute(
     tournamentId: TournamentId,
-  ): ResultAsync<
-    void,
-    NotFoundError | TabbycatError | SaveFailedError | TransactionError
-  > {
+  ): ResultAsync<void, NotFoundError | TabbycatError | SaveFailedError> {
     return safeTry(
       async function* (this: SyncInstitutionsService) {
         const {
@@ -39,7 +32,7 @@ export class SyncInstitutionsService {
           token,
           tournamentSlug,
         });
-        const syncedInstitutionDtos = yield* await tcClient.institutions.list();
+        const syncedInstitutionDtos = yield* await tcClient.listInstitutions();
         const syncedInstitutionIdSet = new Set(
           syncedInstitutionDtos.map((inst) => inst.id),
         );

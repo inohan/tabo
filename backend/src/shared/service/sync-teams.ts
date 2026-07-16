@@ -9,11 +9,7 @@ import {
   TeamId,
   TournamentId,
 } from '../domain';
-import {
-  TournamentRepositoryPort,
-  TransactionError,
-  UnitOfWorkPort,
-} from '../domain/repository';
+import { TournamentRepositoryPort, UnitOfWorkPort } from '../domain/repository';
 import { TabbycatError } from '../client/error';
 import { omit } from 'src/lib/omit';
 
@@ -26,14 +22,8 @@ export class SyncTeamsService {
 
   execute(
     tournamentId: TournamentId,
-  ): ResultAsync<
-    void,
-    NotFoundError | TabbycatError | SaveFailedError | TransactionError
-  > {
-    return safeTry<
-      void,
-      NotFoundError | TabbycatError | SaveFailedError | TransactionError
-    >(
+  ): ResultAsync<void, NotFoundError | TabbycatError | SaveFailedError> {
+    return safeTry(
       async function* (this: SyncTeamsService) {
         const {
           baseUrl,
@@ -45,7 +35,7 @@ export class SyncTeamsService {
           token,
           tournamentSlug,
         });
-        const syncedTeamDtos = yield* await tcClient.teams.list();
+        const syncedTeamDtos = yield* await tcClient.listTeams();
         const syncedTeamIdSet = new Set(syncedTeamDtos.map((team) => team.id));
         // InstitutionId should only be set when entity is created; otherwise it should inherit
         const syncedSpeakerDtos = syncedTeamDtos

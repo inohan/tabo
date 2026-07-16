@@ -1,7 +1,6 @@
 import { err, Result, ResultAsync } from 'neverthrow';
 import {
   TransactionContext,
-  TransactionError,
   UnitOfWorkPort,
 } from 'src/shared/domain/repository';
 import { Db } from '../persistence/db';
@@ -12,6 +11,7 @@ import { SpeakerCategoryRepository } from './speaker-category.repository';
 import { SpeakerRepository } from './speaker.repository';
 import { TeamRepository } from './team.repository';
 import { TournamentRepository } from './tournament.repository';
+import { SaveFailedError } from '@shared/domain';
 
 export class UnitOfWork extends UnitOfWorkPort {
   constructor(private readonly db: Db) {
@@ -20,13 +20,13 @@ export class UnitOfWork extends UnitOfWorkPort {
 
   run<T, E>(
     work: (ctx: TransactionContext) => ResultAsync<T, E>,
-  ): ResultAsync<T, E | TransactionError> {
+  ): ResultAsync<T, E | SaveFailedError> {
     return new ResultAsync(this.execute(work));
   }
 
   private async execute<T, E>(
     work: (ctx: TransactionContext) => ResultAsync<T, E>,
-  ): Promise<Result<T, E | TransactionError>> {
+  ): Promise<Result<T, E | SaveFailedError>> {
     const trx = await this.db.startTransaction().execute();
     try {
       const result = await work({
@@ -51,7 +51,7 @@ export class UnitOfWork extends UnitOfWorkPort {
           .execute()
           .catch(() => undefined);
       }
-      return err(new TransactionError('Transaction failed', { cause }));
+      return err(new SaveFailedError('Transaction failed', { cause }));
     }
   }
 }

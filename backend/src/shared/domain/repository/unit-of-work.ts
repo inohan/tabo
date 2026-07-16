@@ -6,8 +6,7 @@ import { SpeakerCategoryRepositoryPort } from './speaker-category.repository';
 import { SpeakerRepositoryPort } from './speaker.repository';
 import { TeamRepositoryPort } from './team.repository';
 import { TournamentRepositoryPort } from './tournament.repository';
-
-export class TransactionError extends Error {}
+import { SaveFailedError } from '../error';
 
 export interface TransactionContext {
   tournamentRepository: TournamentRepositoryPort;
@@ -22,5 +21,5 @@ export interface TransactionContext {
 export abstract class UnitOfWorkPort {
   abstract run<T, E>(
     work: (ctx: TransactionContext) => ResultAsync<T, E>,
-  ): ResultAsync<T, E | TransactionError>;
+  ): ResultAsync<T, E | SaveFailedError>;
 }

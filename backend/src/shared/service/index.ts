@@ -10,3 +10,8 @@ export * from './sync-break-categories';
 export * from './sync-institutions';
 export * from './sync-speaker-categories';
 export * from './sync-teams';
+export * from './get-tournament';
+export * from './list-tournaments';
+export * from './verify-tournament';
+export * from './get-institution';
+export * from './list-institutions';

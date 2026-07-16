@@ -90,7 +90,6 @@ export const organization = pgTable(
     logo: text('logo'),
     createdAt: timestamp('created_at').notNull(),
     metadata: text('metadata'),
-    tournamentId: text('tournament_id').notNull(),
   },
   (table) => [uniqueIndex('organization_slug_uidx').on(table.slug)],
 );

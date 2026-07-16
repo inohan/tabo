@@ -34,17 +34,6 @@ export const auth = betterAuth({
         admin,
         member,
       },
-      schema: {
-        organization: {
-          additionalFields: {
-            tournamentId: {
-              type: 'string',
-              input: false,
-              required: true,
-            },
-          },
-        },
-      },
     }),
     openAPI(),
   ],

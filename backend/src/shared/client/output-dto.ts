@@ -3,7 +3,7 @@ import * as m from '../domain';
 
 export type TournamentDTO = OmitUnbranded<
   m.Tournament,
-  'tournamentId' | 'token'
+  'tournamentId' | 'token' | 'baseUrl'
 >;
 export type InstitutionDTO = OmitUnbranded<m.Institution, 'tournamentId'>;
 export type TeamDTO = OmitUnbranded<m.Team, 'tournamentId' | 'speakers'> & {
