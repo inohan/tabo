@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { generateClientV1_3 } from '@shared/client/v1.3/tabbycat-1-3';
+import { generateClientV1_3 } from '@shared/clients/v1.3/tabbycat-1-3';
 import {
   AdjudicatorRepositoryPort,
   BreakCategoryRepositoryPort,

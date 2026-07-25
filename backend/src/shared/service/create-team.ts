@@ -1,17 +1,8 @@
 import { PickUnbranded } from 'src/lib/brand';
-import { ClientFactoryPort } from '../client/client-port';
-import {
-  NotFoundError,
-  SaveFailedError,
-  Speaker,
-  Team,
-  TeamId,
-  TournamentId,
-} from '../domain';
+import { ClientFactoryPort, TeamDTO } from '../clients/tabbycat';
+import { SaveFailedError, Speaker, Team, TournamentId } from '../domain';
 import { TournamentRepositoryPort, UnitOfWorkPort } from '../domain/repository';
-import { safeTry, ok, ResultAsync, Result } from 'neverthrow';
-import { TabbycatError } from '../client/error';
-import { TeamDTO } from '../client/output-dto';
+import { safeTry, ok } from 'neverthrow';
 
 export class CreateTeamService {
   constructor(

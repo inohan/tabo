@@ -1,5 +1,5 @@
 import { ok, ResultAsync, safeTry } from 'neverthrow';
-import { ClientFactoryPort } from '../client/client-port';
+import { ClientFactoryPort, TabbycatError } from '../clients/tabbycat';
 import {
   NotFoundError,
   SaveFailedError,
@@ -10,7 +10,6 @@ import {
   TournamentId,
 } from '../domain';
 import { TournamentRepositoryPort, UnitOfWorkPort } from '../domain/repository';
-import { TabbycatError } from '../client/error';
 import { omit } from 'src/lib/omit';
 
 export class SyncTeamsService {

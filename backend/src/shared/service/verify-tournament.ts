@@ -1,6 +1,10 @@
-import { ClientFactoryPort, ClientPort } from '@shared/client/client-port';
-import { TabbycatError, TabbycatResponseError } from '@shared/client/error';
-import { matchOrUndefined } from '@shared/client/url-parse';
+import {
+  ClientFactoryPort,
+  ClientPort,
+  TabbycatError,
+} from '../clients/tabbycat';
+import { TabbycatResponseError } from '../clients/tabbycat/error';
+import { matchOrUndefined } from '@shared/clients/tabbycat/url-parse';
 import { NotFoundError } from '@shared/domain';
 import { err, ok, Result, ResultAsync, safeTry } from 'neverthrow';
 import { match, P } from 'ts-pattern';
@@ -67,6 +71,7 @@ export class VerifyTournamentService {
       TabbycatError | NotFoundError
     >(
       async function* (this: VerifyTournamentService) {
+        // FIXME: risk of SSRF / arbitrary endpoint being requested, including localhost
         const baseUrl = new URL(url).origin;
         // Try to locate from URL
         if (tournamentSlug === undefined) {

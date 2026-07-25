@@ -1,12 +1,11 @@
 import { PickUnbranded } from 'src/lib/brand';
-import { ClientFactoryPort } from '../client/client-port';
+import { ClientFactoryPort, InstitutionDTO } from '../clients/tabbycat';
 import { Institution, TournamentId } from '../domain';
 import {
   InstitutionRepositoryPort,
   TournamentRepositoryPort,
 } from '../domain/repository';
 import { safeTry, ok } from 'neverthrow';
-import { InstitutionDTO } from '../client/output-dto';
 
 export class CreateInstitutionService {
   constructor(

@@ -30,7 +30,7 @@ import {
   NestTournamentDto,
 } from './dto/tournament.dto';
 import { HasActiveOrganization } from '../organization/active-organization.guard';
-import { TabbycatError } from '@shared/client/error';
+import { TabbycatError } from '@shared/clients/error';
 import { throw_ } from 'src/lib/throw';
 import { ok, safeTry } from 'neverthrow';
 import type { ActiveUserSession } from '../lib/user-session';

@@ -72,7 +72,7 @@ describe('institutions', () => {
     ]);
 
     const client = createClient();
-    const result = await client.institutions.list();
+    const result = await client.listInstitutions();
 
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap()).toStrictEqual([
@@ -101,7 +101,7 @@ describe('institutions', () => {
       code: 'Blackthorn',
     });
     const client = createClient();
-    const result = await client.institutions.get(InstitutionId.init(15));
+    const result = await client.getInstitution(InstitutionId.init(15));
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap()).toStrictEqual(
       Institution.init({

@@ -1,12 +1,11 @@
 import { PickUnbranded } from 'src/lib/brand';
-import { ClientFactoryPort } from '../client/client-port';
+import { ClientFactoryPort, BreakCategoryDTO } from '../clients/tabbycat';
 import { BreakCategory, TournamentId } from '../domain';
 import {
   BreakCategoryRepositoryPort,
   TournamentRepositoryPort,
 } from '../domain/repository';
 import { safeTry, ok } from 'neverthrow';
-import { BreakCategoryDTO } from '../client/output-dto';
 
 export class CreateBreakCategoryService {
   constructor(

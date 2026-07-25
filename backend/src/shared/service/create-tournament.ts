@@ -1,14 +1,7 @@
-import { err, ok, ResultAsync, safeTry } from 'neverthrow';
-import { ClientFactoryPort } from '../client/client-port';
-import { matchOrUndefined } from '../client/url-parse';
-import {
-  NotFoundError,
-  SaveFailedError,
-  Tournament,
-  TournamentId,
-} from '../domain';
+import { ok, ResultAsync, safeTry } from 'neverthrow';
+import { ClientFactoryPort, TabbycatError } from '../clients/tabbycat';
+import { SaveFailedError, Tournament, TournamentId } from '../domain';
 import { TournamentRepositoryPort } from '../domain/repository';
-import { TabbycatError } from '../client/error';
 
 export class CreateTournamentService {
   constructor(

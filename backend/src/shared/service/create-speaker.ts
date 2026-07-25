@@ -1,19 +1,11 @@
 import { PickUnbranded } from 'src/lib/brand';
-import { ClientFactoryPort } from '../client/client-port';
-import {
-  NotFoundError,
-  SaveFailedError,
-  Speaker,
-  SpeakerId,
-  TournamentId,
-} from '../domain';
+import { ClientFactoryPort, SpeakerDTO } from '../clients/tabbycat';
+import { Speaker, TournamentId } from '../domain';
 import {
   SpeakerRepositoryPort,
   TournamentRepositoryPort,
 } from '../domain/repository';
-import { safeTry, ok, ResultAsync, Result } from 'neverthrow';
-import { TabbycatError } from '../client/error';
-import { SpeakerDTO } from '../client/output-dto';
+import { safeTry, ok } from 'neverthrow';
 
 export class CreateSpeakerService {
   constructor(

@@ -6,6 +6,7 @@ import {
   NotFoundException,
   Param,
   Post,
+  Put,
 } from '@nestjs/common';
 import { TournamentAuth } from '../tournament/tournament.guard';
 import { ok, safeTry } from 'neverthrow';
@@ -27,7 +28,7 @@ import {
   NestCreateInstitutionDto,
   NestInstitutionDto,
 } from './dto/institution.dto';
-import { TabbycatError } from '@shared/client/error';
+import { TabbycatError } from '@shared/clients/error';
 
 @TournamentAuth()
 @Controller('tournaments/:tournamentId/institutions')
@@ -150,4 +151,6 @@ export class InstitutionController {
         ),
     );
   }
+
+  //TODO: implement PUT endpoint
 }

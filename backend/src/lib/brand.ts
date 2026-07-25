@@ -32,6 +32,11 @@ export const Struct = <TBranded extends Branded<unknown, symbol>>() => ({
   plain: (branded: TBranded) => branded as Unbranded<TBranded>,
 });
 
+/**
+ * `Pick<T, U>`-like type for branded types.
+ * - `RequiredKeys` specify the non-`readonly` keys that are mandatory at initialization.
+ * - `ExcludedMutableKeys` specify the non-`readonly` keys that should not be present at initialization.
+ */
 export type PickUnbranded<
   T extends Branded<object, symbol>,
   RequiredKeys extends MutableKeys<Unbranded<T>>,

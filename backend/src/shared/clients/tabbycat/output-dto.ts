@@ -1,5 +1,5 @@
 import { OmitUnbranded } from 'src/lib/brand';
-import * as m from '../domain';
+import * as m from '@shared/domain';
 
 export type TournamentDTO = OmitUnbranded<
   m.Tournament,

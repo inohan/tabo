@@ -12,7 +12,7 @@ import {
   SpeakerCategoryId,
   Adjudicator,
   AdjudicatorId,
-} from '../domain';
+} from '@shared/domain';
 import * as out from './output-dto';
 import { Result } from 'neverthrow';
 import { PickUnbranded, PickBranded } from 'src/lib/brand';

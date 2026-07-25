@@ -1,12 +1,11 @@
 import { PickUnbranded } from 'src/lib/brand';
-import { ClientFactoryPort } from '../client/client-port';
+import { ClientFactoryPort, AdjudicatorDTO } from '../clients/tabbycat';
 import { Adjudicator, TournamentId } from '../domain';
 import {
   AdjudicatorRepositoryPort,
   TournamentRepositoryPort,
 } from '../domain/repository';
 import { safeTry, ok } from 'neverthrow';
-import { AdjudicatorDTO } from '../client/output-dto';
 
 export class CreateAdjudicatorService {
   constructor(

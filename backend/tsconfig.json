@@ -10,7 +10,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES2023",
+    "target": "es2025",
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
@@ -25,7 +25,9 @@
     "noFallthroughCasesInSwitch": true,
     "paths": {
       "@shared/*": ["src/shared/*"],
-      "@identity/*": ["src/identity/*"]
-    }
+      "@identity/*": ["src/identity/*"],
+      "@importer/*": ["src/importer/*"]
+    },
+    "typeRoots": ["node_modules/@types"]
   }
 }

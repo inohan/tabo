@@ -1,12 +1,11 @@
 import { PickUnbranded } from 'src/lib/brand';
-import { ClientFactoryPort } from '../client/client-port';
+import { ClientFactoryPort, SpeakerCategoryDTO } from '../clients/tabbycat';
 import { SpeakerCategory, TournamentId } from '../domain';
 import {
   SpeakerCategoryRepositoryPort,
   TournamentRepositoryPort,
 } from '../domain/repository';
 import { safeTry, ok } from 'neverthrow';
-import { SpeakerCategoryDTO } from '../client/output-dto';
 
 export class CreateSpeakerCategoryService {
   constructor(
