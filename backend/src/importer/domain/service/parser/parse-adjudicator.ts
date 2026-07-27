@@ -8,7 +8,7 @@ import {
 } from './shared';
 import { err, ok, Result } from 'neverthrow';
 import { ParseFailedError } from '@shared/domain/error';
-import { AdjudicatorImport } from '@importer/domain/values';
+import { AdjudicatorImport, CellValue } from '@importer/domain/values';
 
 const parseAdjudicatorSchema = (delimiter: string) =>
   v.pipe(
@@ -40,7 +40,7 @@ const parseAdjudicatorSchema = (delimiter: string) =>
   );
 
 export const parseAdjudicatorImportRow = (
-  data: Record<string, string | null>,
+  data: Record<string, CellValue>,
   options?: {
     delimiter?: string;
   },

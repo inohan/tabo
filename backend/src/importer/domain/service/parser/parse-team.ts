@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { TeamImport } from '../../values';
+import { CellValue, TeamImport } from '../../values';
 import { err, ok, Result } from 'neverthrow';
 import { ParseFailedError } from '@shared/domain/error';
 import {
@@ -190,10 +190,13 @@ const generateTeamSchema = (
   );
 
 const GroupSpeakersSchema = v.pipe(
-  v.record(v.string(), v.nullable(v.string())),
+  v.record(
+    v.string(),
+    v.nullable(v.union([v.string(), v.boolean(), v.number()])),
+  ),
   v.transform((input) => {
-    const speakers = new Map<number, Record<string, string | null>>();
-    const rest: Record<string, string | null> = {};
+    const speakers = new Map<number, Record<string, CellValue>>();
+    const rest: Record<string, CellValue> = {};
     for (const [key, value] of Object.entries(input)) {
       const m = key.match(/^speaker(\d+)([A-Z]\w*)$/);
       if (!m) {
@@ -215,7 +218,7 @@ const GroupSpeakersSchema = v.pipe(
 );
 
 export const groupTeamImportRow = (
-  data: Record<string, string | null>,
+  data: Record<string, CellValue>,
 ): Result<
   v.InferOutput<typeof GroupSpeakersSchema>,
   ParseFailedError<typeof GroupSpeakersSchema>
@@ -232,7 +235,7 @@ export const groupTeamImportRow = (
 };
 
 export const parseGroupedTeamImportRow = (
-  groupedData: Record<string, Record<string, string | null>[] | string | null>,
+  groupedData: Record<string, Record<string, CellValue>[] | CellValue>,
   options?: {
     splitDelimiter?: string;
     registerCompositeTeamInstitutionConflicts?: boolean;

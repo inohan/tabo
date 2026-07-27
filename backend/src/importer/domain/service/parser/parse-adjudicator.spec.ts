@@ -32,8 +32,6 @@ describe('Parsing adjudicator rows', () => {
       institution: null,
       labels: [],
       institutionConflicts: [],
-      adjudicatorConflicts: [],
-      teamConflicts: [],
     });
   });
 
@@ -55,8 +53,6 @@ describe('Parsing adjudicator rows', () => {
       adjCore: true,
       labels: ['R2', 'R3'],
       institutionConflicts: [],
-      adjudicatorConflicts: [],
-      teamConflicts: [],
     });
   });
 });

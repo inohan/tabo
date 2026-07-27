@@ -1,3 +1,4 @@
+import { CellValue } from '@importer/domain/values';
 import { ParseFailedError } from '@shared/domain/error';
 import { ok, err } from 'neverthrow';
 import * as v from 'valibot';
@@ -5,13 +6,11 @@ import * as v from 'valibot';
 const TableSchema = v.pipe(
   v.object({
     headers: v.array(v.nullable(v.string())),
-    data: v.array(
-      v.array(v.nullable(v.union([v.string(), v.number(), v.boolean()]))),
-    ),
+    row: v.array(v.nullable(v.union([v.string(), v.number(), v.boolean()]))),
   }),
   v.check(
-    ({ headers, data }) => data.every((row) => row.length === headers.length),
-    'Header and data have unequal number of columns.',
+    ({ headers, row }) => row.length === headers.length,
+    'Header and row have unequal number of columns.',
   ),
   v.rawTransform(({ dataset, addIssue, NEVER }) => {
     const camelCaseHeaders = v.parse(
@@ -66,33 +65,38 @@ const TableSchema = v.pipe(
     if (hasErrors) {
       return NEVER;
     }
-    return dataset.value.data.map((row) =>
-      Object.fromEntries(
-        headersWithCamelCase
-          .filter(
-            (
-              input,
-            ): input is [
-              number,
-              { readonly processed: string; readonly raw: string | null },
-            ] => input[1].processed !== null,
-          )
-          .map(([idx, { processed }]) => [
-            processed,
-            row[idx] !== '' ? row[idx] : null,
-          ]),
-      ),
+    return Object.fromEntries(
+      headersWithCamelCase
+        .filter(
+          (
+            input,
+          ): input is [
+            number,
+            { readonly processed: string; readonly raw: string | null },
+          ] => input[1].processed !== null,
+        )
+        .map(([idx, { processed }]) => [
+          processed,
+          dataset.value.row[idx] !== '' ? dataset.value.row[idx] : null,
+        ]),
     );
   }),
 );
 
+/**
+ * Converts raw headers and data into a record whose key is the camelCased header.
+ * @param headers The header.
+ * @param data The rows.
+ * @returns An array of results of the parsing
+ */
 export const parseRawTable = (
   headers: (string | null)[],
-  data: (string | number | boolean | null)[][],
-) => {
-  const result = v.safeParse(TableSchema, { headers, data });
-  if (!result.success) {
-    return err(ParseFailedError.fromIssue<typeof TableSchema>(result.issues));
-  }
-  return ok(result.output);
-};
+  data: CellValue[][],
+) =>
+  data.map((row) => {
+    const result = v.safeParse(TableSchema, { headers, row });
+    if (!result.success) {
+      return err(ParseFailedError.fromIssue<typeof TableSchema>(result.issues));
+    }
+    return ok(result.output);
+  });

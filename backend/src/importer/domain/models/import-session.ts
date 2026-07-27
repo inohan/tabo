@@ -1,36 +1,78 @@
-import { Speaker, Team, TeamId, TournamentId } from '@shared/domain';
-import { Branded, PickUnbranded } from 'src/lib/brand';
+import { TournamentId } from '@shared/domain';
+import { Branded, Struct } from 'src/lib/brand';
+import {
+  AdjudicatorImport,
+  CellValue,
+  ImportOrigin,
+  TeamImport,
+} from '../values';
 
 declare const importSessionSymbol: unique symbol;
 declare const importTeamRowSymbol: unique symbol;
+declare const importAdjudicatorRowSymbol: unique symbol;
 
 export type ImportTeamRow = Branded<
   {
-    raw: unknown;
-    parsedTeam:
-      | (PickUnbranded<
-          Team,
-          'reference' | 'institutionId' | 'breakCategories'
-        > & {
-          speakers: PickUnbranded<
-            Speaker,
-            'name' | 'categories',
-            'teamId' | 'institutionId'
-          >[];
-        })
-      | undefined;
-    classification: 'existing' | 'update' | 'new' | 'invalid';
-  },
-  typeof importRowSymbol
+    raw: CellValue[];
+  } & (
+    | {
+        success: false;
+        error: Error;
+      }
+    | {
+        success: true;
+        parsedTeam: TeamImport;
+        classification: 'existing' | 'update' | 'new';
+      }
+  ),
+  typeof importTeamRowSymbol
+>;
+
+export type ImportAdjudicatorRow = Branded<
+  {
+    raw: CellValue[];
+  } & (
+    | {
+        success: false;
+        error: Error;
+      }
+    | {
+        success: true;
+        parsedTeam: AdjudicatorImport;
+        classification: 'existing' | 'update' | 'new';
+      }
+  ),
+  typeof importAdjudicatorRowSymbol
 >;
 
 export type ImportSession = Branded<
   {
     tournamentId: TournamentId;
-    type: 'team' | 'adjudicator';
-    headers: string[];
-    headerMappings: Record<string, string>;
+    origin: ImportOrigin;
+    headers: (string | null)[];
+    // headerMappings: Record<string, string>;
     createdAt: Date;
-  },
+  } & (
+    | {
+        type: 'team';
+        rows: ImportTeamRow[];
+      }
+    | {
+        type: 'adjudicator';
+        rows: ImportAdjudicatorRow[];
+      }
+  ),
   typeof importSessionSymbol
 >;
+
+const ImportTeamRow = {
+  ...Struct<ImportTeamRow>(),
+};
+
+const ImportAdjudicatorRow = {
+  ...Struct<ImportAdjudicatorRow>(),
+};
+
+const ImportSession = {
+  ...Struct<ImportSession>(),
+};
