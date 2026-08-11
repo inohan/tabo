@@ -14,18 +14,20 @@
     "start:prod": "node dist/api/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "typecheck": "tsc --noEmit",
-    "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test": "dotenv -e .env.test.local -- vitest run --project unit",
+    "test:watch": "dotenv -e .env.test.local -- vitest --project unit",
+    "test:cov": "dotenv -e .env.test.local -- vitest run --project unit --coverage",
+    "test:debug": "dotenv -e .env.test.local -- vitest --inspect-brk --no-file-parallelism",
+    "test:e2e": "dotenv -e .env.test.local -- vitest run --project e2e",
     "tabbycat:gen": "openapi-generator-cli generate && node scripts/add-ts-nocheck.mjs",
-    "drizzle:gen:shared": "drizzle-kit generate --config=./drizzle.config.shared.ts",
-    "drizzle:gen:identity": "drizzle-kit generate --config=./drizzle.config.identity.ts",
-    "drizzle:gen:all": "npm run drizzle:gen:shared && npm run drizzle:gen:identity",
-    "drizzle:migrate:shared": "drizzle-kit migrate --config=./drizzle.config.shared.ts",
-    "drizzle:migrate:identity": "drizzle-kit migrate --config=./drizzle.config.identity.ts",
-    "drizzle:migrate:all": "npm run drizzle:migrate:shared && npm run drizzle:migrate:identity",
+    "drizzle:gen:shared": "dotenv -e ${DRIZZLE_ENV:-.env} -- drizzle-kit generate --config=./drizzle.config.shared.ts",
+    "drizzle:gen:identity": "dotenv -e ${DRIZZLE_ENV:-.env} -- drizzle-kit generate --config=./drizzle.config.identity.ts",
+    "drizzle:gen:importer": "dotenv -e ${DRIZZLE_ENV:-.env} -- drizzle-kit generate --config=./drizzle.config.importer.ts",
+    "drizzle:gen:all": "npm run drizzle:gen:shared && npm run drizzle:gen:identity && npm run drizzle:gen:importer",
+    "drizzle:migrate:shared": "dotenv -e ${DRIZZLE_ENV:-.env} -- drizzle-kit migrate --config=./drizzle.config.shared.ts",
+    "drizzle:migrate:identity": "dotenv -e ${DRIZZLE_ENV:-.env} -- drizzle-kit migrate --config=./drizzle.config.identity.ts",
+    "drizzle:migrate:importer": "dotenv -e ${DRIZZLE_ENV:-.env} -- drizzle-kit migrate --config=./drizzle.config.importer.ts",
+    "drizzle:migrate:all": "npm run drizzle:migrate:shared && npm run drizzle:migrate:identity && npm run drizzle:migrate:importer",
     "auth:gen": "npx auth@latest generate --config ./src/identity/infrastructure/persistence/auth.ts --output ./src/identity/infrastructure/persistence/auth-schema.ts"
   },
   "dependencies": {
@@ -37,7 +39,6 @@
     "better-auth": "^1.6.23",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
-    "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "eslint-plugin-neverthrow": "^1.1.4",
     "googleapis": "^173.0.0",
@@ -58,63 +59,30 @@
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
     "@openapitools/openapi-generator-cli": "^2.39.0",
+    "@swc/core": "^1.15.47",
     "@types/express": "^5.0.0",
-    "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
     "@types/pg": "^8.20.0",
     "@types/supertest": "^7.0.0",
+    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/expect": "^4.1.10",
+    "dotenv": "^17.4.2",
+    "dotenv-cli": "^11.0.0",
     "drizzle-kit": "^0.31.5",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^17.0.0",
-    "jest": "^30.0.0",
     "prettier": "^3.4.2",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
-    "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.22.4",
     "typescript": "~6.0",
-    "typescript-eslint": "^8.20.0"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": [
-        "ts-jest",
-        {
-          "diagnostics": {
-            "exclude": [
-              "**"
-            ]
-          }
-        }
-      ]
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node",
-    "setupFiles": [
-      "<rootDir>/../test/setup-env.ts"
-    ],
-    "moduleNameMapper": {
-      "^src/(.*)$": "<rootDir>/$1",
-      "^test/(.*)$": "<rootDir>/../test/$1",
-      "^tabbycat-client/(.*)$": "<rootDir>/../tabbycat-client/$1",
-      "^@shared/(.*)$": "<rootDir>/shared/$1",
-      "^@identity/(.*)$": "<rootDir>/identity/$1",
-      "^@importer/(.*)$": "<rootDir>/importer/$1"
-    }
+    "typescript-eslint": "^8.20.0",
+    "unplugin-swc": "^1.5.10",
+    "vitest": "^4.1.10"
   }
 }

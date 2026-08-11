@@ -1,9 +1,9 @@
+import { expectOkResult } from 'test/lib/expect-result';
 import { generateClientV1_3 } from './tabbycat-1-3';
-import { Institution, InstitutionId, TournamentId } from 'src/shared/domain';
+import { InstitutionId } from 'src/shared/domain';
 
 const BASE_URL = 'https://test-tab.com';
 const TOURNAMENT_SLUG = 'test-tourney';
-const TOURNAMENT_ID = TournamentId.init('tid-001');
 
 function createClient() {
   return generateClientV1_3({
@@ -25,9 +25,8 @@ function createClient() {
  *   ]);
  */
 function mockFetch(urlPattern: string, body: unknown, status = 200) {
-  jest
-    .spyOn(global, 'fetch')
-    .mockImplementation((input: string | URL | Request) => {
+  vi.spyOn(global, 'fetch').mockImplementation(
+    (input: string | URL | Request) => {
       const url =
         typeof input === 'string'
           ? input
@@ -43,11 +42,12 @@ function mockFetch(urlPattern: string, body: unknown, status = 200) {
         );
       }
       throw new Error(`Unexpected fetch to ${url}`);
-    });
+    },
+  );
 }
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 describe('institutions', () => {
@@ -72,22 +72,19 @@ describe('institutions', () => {
     ]);
 
     const client = createClient();
-    const result = await client.listInstitutions();
+    const institutions = expectOkResult(await client.listInstitutions());
 
-    expect(result.isOk()).toBe(true);
-    expect(result._unsafeUnwrap()).toStrictEqual([
-      Institution.init({
+    expect(institutions).toStrictEqual([
+      {
         id: InstitutionId.init(15),
-        tournamentId: TOURNAMENT_ID,
         code: 'Blackthorn',
         name: 'Blackthorn City College',
-      }),
-      Institution.init({
+      },
+      {
         id: InstitutionId.init(8),
-        tournamentId: TOURNAMENT_ID,
         name: "Celadon City Trainers' Academy",
         code: 'Celadon',
-      }),
+      },
     ]);
   });
 
@@ -101,15 +98,13 @@ describe('institutions', () => {
       code: 'Blackthorn',
     });
     const client = createClient();
-    const result = await client.getInstitution(InstitutionId.init(15));
-    expect(result.isOk()).toBe(true);
-    expect(result._unsafeUnwrap()).toStrictEqual(
-      Institution.init({
-        id: InstitutionId.init(15),
-        tournamentId: TOURNAMENT_ID,
-        code: 'Blackthorn',
-        name: 'Blackthorn City College',
-      }),
+    const institution = expectOkResult(
+      await client.getInstitution(InstitutionId.init(15)),
     );
+    expect(institution).toStrictEqual({
+      id: InstitutionId.init(15),
+      code: 'Blackthorn',
+      name: 'Blackthorn City College',
+    });
   });
 });

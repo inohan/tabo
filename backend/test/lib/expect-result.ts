@@ -1,5 +1,14 @@
 import { Err, Ok, Result } from 'neverthrow';
 
+// `Matchers` is declared in @vitest/expect and only re-exported by `vitest`,
+// so augmenting 'vitest' would create a second interface instead of merging.
+declare module '@vitest/expect' {
+  interface Matchers<T = unknown> {
+    toBeOkResult(): T;
+    toBeErrResult(): T;
+  }
+}
+
 expect.extend({
   toBeOkResult(received: unknown) {
     if (received instanceof Err) {
@@ -42,7 +51,6 @@ expect.extend({
 });
 
 export const expectOkResult = <T>(result: Result<T, unknown>): T => {
-  // @ts-expect-error expect registration
   expect(result).toBeOkResult();
   return result._unsafeUnwrap();
 };
@@ -51,7 +59,6 @@ export const expectErrResult = <E extends Error>(
   result: Result<unknown, E>,
   errorInstance?: new (...args: never[]) => Error,
 ): E => {
-  // @ts-expect-error expect registration
   expect(result).toBeErrResult();
   const unwrapped = result._unsafeUnwrapErr();
   if (errorInstance) {

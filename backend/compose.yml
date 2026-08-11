@@ -1,4 +1,23 @@
 services:
+  postgres-test:
+    image: postgres:18
+    profiles: [test]
+    tmpfs:
+      - /var/lib/postgresql/18/docker
+    environment:
+      POSTGRES_PASSWORD: tabo
+      POSTGRES_USER: tabo
+      POSTGRES_DB: tabo_test
+    command: postgres -c fsync=off -c synchronous_commit=off -c full_page_writes=off
+    ports:
+      - '5433:5432'
+    healthcheck:
+      # -h 127.0.0.1 forces TCP so the socket-only server used during
+      # first-time init is not mistaken for a ready database.
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U tabo -d tabo_test']
+      interval: 1s
+      timeout: 3s
+      retries: 30
   postgres:
     image: postgres:18
     volumes:
