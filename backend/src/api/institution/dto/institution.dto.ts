@@ -1,9 +1,6 @@
 export class NestInstitutionDto {
   tournamentId!: string;
-  tabbycatInfo!: NestInstitutionTabbycatDto;
-}
 
-export class NestInstitutionTabbycatDto {
   id!: number;
   name!: string;
   code!: string;

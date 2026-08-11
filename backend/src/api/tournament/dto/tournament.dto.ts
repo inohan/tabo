@@ -1,7 +1,10 @@
 export class NestTournamentDto {
-  id!: string;
+  tournamentId!: string;
   baseUrl!: string;
-  tabbycatInfo!: NestTournamentTabbycatDto;
+  id!: number;
+  slug!: string;
+  name!: string;
+  shortName!: string;
 }
 
 export class NestCreateTournamentDto {

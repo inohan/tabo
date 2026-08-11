@@ -30,7 +30,7 @@ import {
   NestTournamentDto,
 } from './dto/tournament.dto';
 import { HasActiveOrganization } from '../organization/active-organization.guard';
-import { TabbycatError } from '@shared/clients/error';
+import { TabbycatError } from '@shared/clients/tabbycat/error';
 import { throw_ } from 'src/lib/throw';
 import { ok, safeTry } from 'neverthrow';
 import type { ActiveUserSession } from '../lib/user-session';
@@ -66,7 +66,7 @@ export class TournamentController {
       }.bind(this),
     ).match(
       (t) => t,
-      (e) => throw_(new BadRequestException()),
+      () => throw_(new BadRequestException()),
     );
   }
 
