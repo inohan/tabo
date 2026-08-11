@@ -8,6 +8,10 @@ export abstract class ImportSessionRepositoryPort {
     type: 'team' | 'adjudicator';
   }): Promise<Result<ImportSession, NotFoundError>>;
 
+  /**
+   * Upserts a new import session. Fails if another import session with the same (tournamentId, type) exists.
+   * @param importSession The import session to upsert.
+   */
   abstract save(
     importSession: ImportSession,
   ): Promise<Result<void, SaveFailedError>>;

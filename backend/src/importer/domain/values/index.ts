@@ -1,5 +1,4 @@
-export * from './team-import';
-export * from './speaker-import';
-export * from './adjudicator-import';
+export * from './team';
+export * from './adjudicator';
 export * from './import-origin';
 export * from './cell-value';

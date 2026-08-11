@@ -13,6 +13,7 @@ import { AdjudicatorImport, CellValue } from '@importer/domain/values';
 const parseAdjudicatorSchema = (delimiter: string) =>
   v.pipe(
     v.object({
+      id: nullish(v.pipe(v.number(), v.integer())),
       name: v.string(),
       email: nullish(doubleDashAsNull(v.pipe(v.string(), v.email()))),
       adjCore: nullish(StringBoolean),

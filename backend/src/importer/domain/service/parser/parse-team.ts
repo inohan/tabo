@@ -129,6 +129,7 @@ const generateTeamSchema = (
         'Error with institutions',
       ),
       v.object({
+        id: nullish(v.pipe(v.number(), v.integer())),
         reference: TeamReference,
         shortReference: nullish(TeamShortReference),
         institutionConflicts: nullish(
@@ -154,6 +155,7 @@ const generateTeamSchema = (
         ),
         speakers: v.array(
           v.object({
+            id: nullish(v.pipe(v.number(), v.integer())),
             name: v.string(),
             categories: v.pipe(
               v.nullable(v.string(), ''),

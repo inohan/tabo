@@ -1,6 +1,11 @@
 import { ImportSessionRepositoryPort } from '../../domain/repository/import-session.repository';
 import { Db } from '../persistence/db';
-import { NotFoundError, SaveFailedError, TournamentId } from '@shared/domain';
+import {
+  NotFoundError,
+  SaveFailedError,
+  TeamId,
+  TournamentId,
+} from '@shared/domain';
 import { err, ok, Result } from 'neverthrow';
 import {
   ImportAdjudicatorRow,
@@ -10,6 +15,7 @@ import {
 } from '../../domain/models/import-session';
 import { match } from 'ts-pattern';
 import { throw_ } from 'src/lib/throw';
+import { castJson } from 'src/lib/json';
 
 export class ImportSessionRepository extends ImportSessionRepositoryPort {
   constructor(private db: Db) {
@@ -45,26 +51,40 @@ export class ImportSessionRepository extends ImportSessionRepositoryPort {
           .orderBy('seq')
           .execute();
         const importRows = importRowsRaw.map((row) =>
-          ImportTeamRow.init(
-            match(row)
-              .with(
-                { success: true },
-                ({ raw, success, parsed, classification }) => ({
+          match(row)
+            .returnType<ImportTeamRow>()
+            .with(
+              { success: true },
+              ({
+                raw,
+                success,
+                parsed,
+                matched,
+                updateNecessity,
+                duplication,
+                doImport,
+              }) =>
+                ImportTeamRow.init({
                   raw,
                   success,
-                  parsedTeam: parsed ?? throw_(new Error(`Missing parsedTeam`)),
-                  classification:
-                    classification ??
-                    throw_(new Error(`Missing classification`)),
+                  parsedTeam: parsed ?? throw_(new Error('Missing parsedTeam')),
+                  matchedTeam: matched !== null ? TeamId.init(matched) : null,
+                  updateNecessity:
+                    updateNecessity ??
+                    throw_(new Error('Missing updateNecessity')),
+                  duplication:
+                    duplication ?? throw_(new Error('Missing duplication')),
+                  doImport: doImport ?? throw_(new Error('Missing doImport')),
                 }),
-              )
-              .with({ success: false }, ({ raw, success, error }) => ({
+            )
+            .with({ success: false }, ({ raw, success, error }) =>
+              ImportTeamRow.init({
                 raw,
                 success,
                 error: error ?? throw_(new Error(`Missing error`)),
-              }))
-              .exhaustive(),
-          ),
+              }),
+            )
+            .exhaustive(),
         );
         return {
           type,
@@ -129,10 +149,23 @@ export class ImportSessionRepository extends ImportSessionRepositoryPort {
           await this.db.transaction().execute(async (trx) => {
             await trx
               .insertInto('importSession')
-              .values(importSession)
+              .values({
+                sessionId: importSession.sessionId,
+                tournamentId: importSession.tournamentId,
+                type: importSession.type,
+                createdAt: importSession.createdAt,
+                updatedAt: importSession.updatedAt,
+                origin: castJson(importSession.origin),
+                headers: castJson(importSession.headers),
+              })
               .onConflict((oc) =>
                 oc.columns(['sessionId']).doUpdateSet({
-                  updatedAt: new Date(),
+                  tournamentId: importSession.tournamentId,
+                  type: importSession.type,
+                  createdAt: importSession.createdAt,
+                  updatedAt: importSession.updatedAt,
+                  origin: castJson(importSession.origin),
+                  headers: castJson(importSession.headers),
                 }),
               )
               .executeTakeFirst();
@@ -140,30 +173,48 @@ export class ImportSessionRepository extends ImportSessionRepositoryPort {
               .deleteFrom('importTeamRow')
               .where('sessionId', '=', importSession.sessionId)
               .execute();
-            for (const [seq, row] of rows.entries()) {
-              await trx
-                .insertInto('importTeamRow')
-                .values({
+            await trx
+              .insertInto('importTeamRow')
+              .values(
+                rows.map((row, seq) => ({
                   sessionId: importSession.sessionId,
                   seq,
-                  raw: row.raw,
+                  raw: castJson(row.raw),
                   success: row.success,
-                  parsed: row.success ? row.parsedTeam : null,
-                  classification: row.success ? row.classification : null,
                   error: row.success ? null : row.error,
-                })
-                .executeTakeFirst();
-            }
+                  parsed: row.success ? castJson(row.parsedTeam) : null,
+                  matched: row.success ? row.matchedTeam : null,
+                  updateNecessity: row.success
+                    ? castJson(row.updateNecessity)
+                    : null,
+                  duplication: row.success ? castJson(row.duplication) : null,
+                  doImport: row.success ? row.doImport : null,
+                })),
+              )
+              .execute();
           });
         })
         .with({ type: 'adjudicator' }, async ({ rows }) => {
           await this.db.transaction().execute(async (trx) => {
             await trx
               .insertInto('importSession')
-              .values(importSession)
+              .values({
+                sessionId: importSession.sessionId,
+                tournamentId: importSession.tournamentId,
+                type: importSession.type,
+                createdAt: importSession.createdAt,
+                updatedAt: importSession.updatedAt,
+                origin: castJson(importSession.origin),
+                headers: castJson(importSession.headers),
+              })
               .onConflict((oc) =>
                 oc.columns(['sessionId']).doUpdateSet({
-                  updatedAt: new Date(),
+                  tournamentId: importSession.tournamentId,
+                  type: importSession.type,
+                  createdAt: importSession.createdAt,
+                  updatedAt: importSession.updatedAt,
+                  origin: castJson(importSession.origin),
+                  headers: castJson(importSession.headers),
                 }),
               )
               .executeTakeFirst();
@@ -171,20 +222,20 @@ export class ImportSessionRepository extends ImportSessionRepositoryPort {
               .deleteFrom('importAdjudicatorRow')
               .where('sessionId', '=', importSession.sessionId)
               .execute();
-            for (const [seq, row] of rows.entries()) {
-              await trx
-                .insertInto('importAdjudicatorRow')
-                .values({
+            await trx
+              .insertInto('importAdjudicatorRow')
+              .values(
+                rows.map((row, seq) => ({
                   sessionId: importSession.sessionId,
                   seq,
-                  raw: row.raw,
+                  raw: castJson(row.raw),
                   success: row.success,
-                  parsed: row.success ? row.parsedAdjudicator : null,
+                  parsed: row.success ? castJson(row.parsedAdjudicator) : null,
                   classification: row.success ? row.classification : null,
                   error: row.success ? null : row.error,
-                })
-                .executeTakeFirst();
-            }
+                })),
+              )
+              .execute();
           });
         })
         .exhaustive();

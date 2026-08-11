@@ -1,10 +1,14 @@
-import { TournamentId } from '@shared/domain';
-import { Branded, Struct, Unbranded } from 'src/lib/brand';
+import { AdjudicatorId, TeamId, TournamentId } from '@shared/domain';
+import { Branded, Struct } from 'src/lib/brand';
 import {
   AdjudicatorImport,
+  AdjudicatorUpdateNecessity,
   CellValue,
   ImportOrigin,
+  SerializedAdjudicatorDuplicationStatus,
+  SerializedTeamDuplicationStatus,
   TeamImport,
+  TeamUpdateNecessity,
 } from '../values';
 
 declare const importSessionIdSymbol: unique symbol;
@@ -23,7 +27,10 @@ export type ImportTeamRow = Branded<
     | {
         success: true;
         parsedTeam: TeamImport;
-        classification: 'existing' | 'update' | 'new';
+        matchedTeam: TeamId | null;
+        updateNecessity: TeamUpdateNecessity;
+        duplication: SerializedTeamDuplicationStatus;
+        doImport: boolean;
       }
   ),
   typeof importTeamRowSymbol
@@ -44,7 +51,10 @@ export type ImportAdjudicatorRow = Branded<
     | {
         success: true;
         parsedAdjudicator: AdjudicatorImport;
-        classification: 'existing' | 'update' | 'new';
+        matchedAdjudicator: AdjudicatorId | null;
+        updateNecessity: AdjudicatorUpdateNecessity;
+        duplication: SerializedAdjudicatorDuplicationStatus;
+        doImport: boolean;
       }
   ),
   typeof importAdjudicatorRowSymbol

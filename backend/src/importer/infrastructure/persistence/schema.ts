@@ -6,7 +6,9 @@ import {
   AdjudicatorImport,
   CellValue,
   ImportOrigin,
+  SerializedTeamDuplicationStatus,
   TeamImport,
+  TeamUpdateNecessity,
 } from '@importer/domain/values';
 import { integer } from 'drizzle-orm/pg-core';
 import { primaryKey } from 'drizzle-orm/pg-core';
@@ -42,7 +44,10 @@ export const importTeamRowTable = importerSchema.table(
     success: boolean().notNull(),
     error: varchar(),
     parsed: jsonb().$type<TeamImport>(),
-    classification: importRowClassificationEnum(),
+    matched: integer(),
+    updateNecessity: jsonb().$type<TeamUpdateNecessity>(),
+    duplication: jsonb().$type<SerializedTeamDuplicationStatus>(),
+    doImport: boolean(),
   },
   (table) => [
     primaryKey({

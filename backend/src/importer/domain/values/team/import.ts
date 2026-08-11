@@ -1,12 +1,16 @@
+export type SpeakerImport = {
+  id?: number;
+  institution: string | null;
+  name: string;
+  categories: string[];
+  anonymous?: boolean;
+  email?: string | null;
+  labels?: string[];
+};
+
 export type TeamImport = {
-  speakers: {
-    institution: string | null;
-    name: string;
-    categories: string[];
-    anonymous?: boolean;
-    email?: string | null;
-    labels?: string[];
-  }[];
+  id?: number;
+  speakers: SpeakerImport[];
   institution: string | null;
   reference: string;
   shortReference?: string;

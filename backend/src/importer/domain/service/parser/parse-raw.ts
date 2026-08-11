@@ -1,6 +1,6 @@
 import { CellValue } from '@importer/domain/values';
 import { ParseFailedError } from '@shared/domain/error';
-import { ok, err } from 'neverthrow';
+import { ok, err, Result } from 'neverthrow';
 import * as v from 'valibot';
 
 const TableSchema = v.pipe(
@@ -89,10 +89,13 @@ const TableSchema = v.pipe(
  * @param data The rows.
  * @returns An array of results of the parsing
  */
-export const parseRawTable = (
-  headers: (string | null)[],
-  data: CellValue[][],
-) =>
+export const parseRawTable = ({
+  headers,
+  data,
+}: {
+  headers: (string | null)[];
+  data: CellValue[][];
+}): Result<Record<string, CellValue>, ParseFailedError<typeof TableSchema>>[] =>
   data.map((row) => {
     const result = v.safeParse(TableSchema, { headers, row });
     if (!result.success) {
