@@ -38,16 +38,8 @@ export class TeamRepository extends TeamRepositoryPort {
         'useInstitutionPrefix',
         'shortName',
         'longName',
-        sql<
-          number[]
-        >`ARRAY(${eb.selectFrom('teamInstitutionConflict').select('institutionId').whereRef('teamInstitutionConflict.tournamentId', '=', 'team.tournamentId').whereRef('teamInstitutionConflict.teamId', '=', 'team.id')})`.as(
-          'institutionConflicts',
-        ),
-        sql<
-          number[]
-        >`ARRAY(${eb.selectFrom('teamBreakCategory').select('breakCategoryId').whereRef('teamBreakCategory.tournamentId', '=', 'team.tournamentId').whereRef('teamBreakCategory.teamId', '=', 'team.id')})`.as(
-          'breakCategories',
-        ),
+        'institutionConflicts',
+        'breakCategories',
         sql<
           number[]
         >`ARRAY(${eb.selectFrom('speaker').select('id').whereRef('speaker.tournamentId', '=', 'team.tournamentId').whereRef('speaker.teamId', '=', 'team.id')})`.as(
@@ -83,16 +75,8 @@ export class TeamRepository extends TeamRepositoryPort {
         'useInstitutionPrefix',
         'shortName',
         'longName',
-        sql<
-          number[]
-        >`ARRAY(${eb.selectFrom('teamInstitutionConflict').select('institutionId').whereRef('teamInstitutionConflict.tournamentId', '=', 'team.tournamentId').whereRef('teamInstitutionConflict.teamId', '=', 'team.id')})`.as(
-          'institutionConflicts',
-        ),
-        sql<
-          number[]
-        >`ARRAY(${eb.selectFrom('teamBreakCategory').select('breakCategoryId').whereRef('teamBreakCategory.tournamentId', '=', 'team.tournamentId').whereRef('teamBreakCategory.teamId', '=', 'team.id')})`.as(
-          'breakCategories',
-        ),
+        'institutionConflicts',
+        'breakCategories',
         sql<
           number[]
         >`ARRAY(${eb.selectFrom('speaker').select('id').whereRef('speaker.tournamentId', '=', 'team.tournamentId').whereRef('speaker.teamId', '=', 'team.id')})`.as(
@@ -120,92 +104,41 @@ export class TeamRepository extends TeamRepositoryPort {
       institutionConflicts,
       breakCategories,
     } = team;
-    try {
-      await this.db.transaction().execute(async (trx) => {
-        const saved = await trx
-          .insertInto('team')
-          .values({
-            tournamentId,
-            id,
-            reference,
-            shortReference,
-            institutionId,
-            emoji,
-            codeName,
-            useInstitutionPrefix,
-            shortName,
-            longName,
-          })
-          .onConflict((oc) =>
-            oc.columns(['tournamentId', 'id']).doUpdateSet({
-              reference,
-              shortReference,
-              institutionId,
-              emoji,
-              codeName,
-              useInstitutionPrefix,
-              shortName,
-              longName,
-            }),
-          )
-          .returningAll()
-          .executeTakeFirst();
-        if (!saved) {
-          throw new SaveFailedError(
-            `Failed to save team ${id} in tournament ${tournamentId}`,
-          );
-        }
-        await trx
-          .deleteFrom('teamInstitutionConflict')
-          .where('tournamentId', '=', tournamentId)
-          .where('teamId', '=', id)
-          .where('institutionId', 'not in', institutionConflicts)
-          .execute();
-        if (institutionConflicts.length > 0) {
-          await trx
-            .insertInto('teamInstitutionConflict')
-            .values(
-              institutionConflicts.map((instId) => ({
-                tournamentId,
-                teamId: id,
-                institutionId: instId,
-              })),
-            )
-            .onConflict((oc) =>
-              oc
-                .columns(['tournamentId', 'teamId', 'institutionId'])
-                .doNothing(),
-            )
-            .execute();
-        }
-        await trx
-          .deleteFrom('teamBreakCategory')
-          .where('tournamentId', '=', tournamentId)
-          .where('teamId', '=', id)
-          .where('breakCategoryId', 'not in', breakCategories)
-          .execute();
-        if (breakCategories.length > 0) {
-          await trx
-            .insertInto('teamBreakCategory')
-            .values(
-              breakCategories.map((breakCategoryId) => ({
-                tournamentId,
-                teamId: id,
-                breakCategoryId,
-              })),
-            )
-            .onConflict((oc) =>
-              oc
-                .columns(['tournamentId', 'teamId', 'breakCategoryId'])
-                .doNothing(),
-            )
-            .execute();
-        }
-      });
-    } catch (error) {
+    const saved = await this.db
+      .insertInto('team')
+      .values({
+        tournamentId,
+        id,
+        reference,
+        shortReference,
+        institutionId,
+        emoji,
+        codeName,
+        useInstitutionPrefix,
+        shortName,
+        longName,
+        institutionConflicts,
+        breakCategories,
+      })
+      .onConflict((oc) =>
+        oc.columns(['tournamentId', 'id']).doUpdateSet({
+          reference,
+          shortReference,
+          institutionId,
+          emoji,
+          codeName,
+          useInstitutionPrefix,
+          shortName,
+          longName,
+          institutionConflicts,
+          breakCategories,
+        }),
+      )
+      .executeTakeFirst();
+    if (saved.numInsertedOrUpdatedRows !== 1n) {
       return err(
         new SaveFailedError(
-          `Failed to save team ${id} in tournament ${tournamentId}: ${error as Error}`,
+          `Failed to save team ${id} in tournament ${tournamentId}`,
         ),
       );
     }
@@ -229,21 +162,32 @@ export class TeamRepository extends TeamRepositoryPort {
   }
 }
 
-function toModel(row: {
-  tournamentId: string;
-  id: number;
-  reference: string;
-  shortReference: string;
-  institutionId: number | null;
-  emoji: string | null;
-  codeName: string;
-  useInstitutionPrefix: boolean;
-  shortName: string;
-  longName: string;
-  institutionConflicts: number[];
-  breakCategories: number[];
-  speakers: number[];
-}): Team {
+// Used only for typing
+const selector = async (db: Db) =>
+  await db
+    .selectFrom('team')
+    .select((eb) => [
+      'tournamentId',
+      'id',
+      'reference',
+      'shortReference',
+      'institutionId',
+      'emoji',
+      'codeName',
+      'useInstitutionPrefix',
+      'shortName',
+      'longName',
+      'institutionConflicts',
+      'breakCategories',
+      sql<
+        number[]
+      >`ARRAY(${eb.selectFrom('speaker').select('id').whereRef('speaker.tournamentId', '=', 'team.tournamentId').whereRef('speaker.teamId', '=', 'team.id')})`.as(
+        'speakers',
+      ),
+    ])
+    .executeTakeFirstOrThrow();
+
+function toModel(row: Awaited<ReturnType<typeof selector>>): Team {
   return Team.init({
     id: TeamId.init(row.id),
     tournamentId: TournamentId.init(row.tournamentId),

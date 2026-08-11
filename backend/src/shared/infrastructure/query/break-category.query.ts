@@ -1,37 +1,47 @@
 import { Db, DbSchema } from '../persistence/db';
-import { InstitutionId, TournamentId } from '../../domain';
+import { BreakCategoryId, InstitutionId, TournamentId } from '../../domain';
 import { Selectable } from 'kysely';
 
-export type InstitutionDto = {
+export type BreakCategoryDto = {
   tournamentId: string;
 
   id: number;
   name: string;
-  code: string;
+  slug: string;
+  seq: number;
+  breakSize: number;
+  reserveSize: number;
+  isGeneral: boolean;
+  priority: number;
 };
 
 const toDto = (
-  result: Selectable<DbSchema['institution']>,
-): InstitutionDto => ({
+  result: Selectable<DbSchema['breakCategory']>,
+): BreakCategoryDto => ({
   tournamentId: result.tournamentId,
 
   id: result.id,
   name: result.name,
-  code: result.code,
+  slug: result.slug,
+  seq: result.seq,
+  breakSize: result.breakSize,
+  reserveSize: result.reserveSize,
+  isGeneral: result.isGeneral,
+  priority: result.priority,
 });
 
-export class InstitutionQuery {
+export class BreakCategoryQuery {
   constructor(private db: Db) {}
 
   async get({
     tournamentId,
-    institutionId,
+    breakCategoryId: institutionId,
   }: {
     tournamentId: TournamentId;
-    institutionId: InstitutionId;
-  }): Promise<InstitutionDto | undefined> {
+    breakCategoryId: BreakCategoryId;
+  }): Promise<BreakCategoryDto | undefined> {
     const queryResult = await this.db
-      .selectFrom('institution')
+      .selectFrom('breakCategory')
       .selectAll()
       .where('tournamentId', '=', tournamentId)
       .where('id', '=', institutionId)
@@ -44,16 +54,16 @@ export class InstitutionQuery {
 
   async getAll({
     tournamentId,
-    institutionIds,
+    breakCategoryIds: institutionIds,
   }: {
     tournamentId: TournamentId;
-    institutionIds: InstitutionId[];
-  }): Promise<InstitutionDto[]> {
+    breakCategoryIds: InstitutionId[];
+  }): Promise<BreakCategoryDto[]> {
     if (institutionIds.length === 0) {
       return [];
     }
     const queryResults = await this.db
-      .selectFrom('institution')
+      .selectFrom('breakCategory')
       .selectAll()
       .where('tournamentId', '=', tournamentId)
       .where('id', 'in', institutionIds)
@@ -66,9 +76,9 @@ export class InstitutionQuery {
     tournamentId,
   }: {
     tournamentId: TournamentId;
-  }): Promise<InstitutionDto[]> {
+  }): Promise<BreakCategoryDto[]> {
     const queryResults = await this.db
-      .selectFrom('institution')
+      .selectFrom('breakCategory')
       .selectAll()
       .where('tournamentId', '=', tournamentId)
       .orderBy('id')

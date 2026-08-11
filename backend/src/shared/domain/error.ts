@@ -9,6 +9,11 @@ export class SaveFailedError extends Error {
   private __saveFailedError!: void;
 }
 
+export class AuthError extends Error {
+  override name = 'AuthError';
+  private __authError!: void;
+}
+
 export class ParseFailedError<
   TBase extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>> =
     v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>,

@@ -1,40 +1,48 @@
 import { Db, DbSchema } from '../persistence/db';
-import { InstitutionId, TournamentId } from '../../domain';
+import { SpeakerId, TournamentId } from '../../domain';
 import { Selectable } from 'kysely';
 
-export type InstitutionDto = {
+export type SpeakerDto = {
   tournamentId: string;
 
   id: number;
   name: string;
-  code: string;
+  team: number;
+  categories: number[];
+  anonymous: boolean;
+  email: string | null;
+
+  institution: number | null;
 };
 
-const toDto = (
-  result: Selectable<DbSchema['institution']>,
-): InstitutionDto => ({
+const toDto = (result: Selectable<DbSchema['speaker']>): SpeakerDto => ({
   tournamentId: result.tournamentId,
 
   id: result.id,
   name: result.name,
-  code: result.code,
+  team: result.teamId,
+  categories: result.categories,
+  anonymous: result.anonymous,
+  email: result.email,
+
+  institution: result.institutionId,
 });
 
-export class InstitutionQuery {
+export class SpeakerQuery {
   constructor(private db: Db) {}
 
   async get({
     tournamentId,
-    institutionId,
+    speakerId,
   }: {
     tournamentId: TournamentId;
-    institutionId: InstitutionId;
-  }): Promise<InstitutionDto | undefined> {
+    speakerId: SpeakerId;
+  }): Promise<SpeakerDto | undefined> {
     const queryResult = await this.db
-      .selectFrom('institution')
+      .selectFrom('speaker')
       .selectAll()
       .where('tournamentId', '=', tournamentId)
-      .where('id', '=', institutionId)
+      .where('id', '=', speakerId)
       .executeTakeFirst();
     if (queryResult === undefined) {
       return undefined;
@@ -44,19 +52,19 @@ export class InstitutionQuery {
 
   async getAll({
     tournamentId,
-    institutionIds,
+    speakerIds,
   }: {
     tournamentId: TournamentId;
-    institutionIds: InstitutionId[];
-  }): Promise<InstitutionDto[]> {
-    if (institutionIds.length === 0) {
+    speakerIds: SpeakerId[];
+  }): Promise<SpeakerDto[]> {
+    if (speakerIds.length === 0) {
       return [];
     }
     const queryResults = await this.db
-      .selectFrom('institution')
+      .selectFrom('speaker')
       .selectAll()
       .where('tournamentId', '=', tournamentId)
-      .where('id', 'in', institutionIds)
+      .where('id', 'in', speakerIds)
       .orderBy('id')
       .execute();
     return queryResults.map(toDto);
@@ -66,9 +74,9 @@ export class InstitutionQuery {
     tournamentId,
   }: {
     tournamentId: TournamentId;
-  }): Promise<InstitutionDto[]> {
+  }): Promise<SpeakerDto[]> {
     const queryResults = await this.db
-      .selectFrom('institution')
+      .selectFrom('speaker')
       .selectAll()
       .where('tournamentId', '=', tournamentId)
       .orderBy('id')

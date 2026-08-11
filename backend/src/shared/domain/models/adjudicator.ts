@@ -12,6 +12,7 @@ export type Adjudicator = Branded<
     readonly id: AdjudicatorId;
     readonly tournamentId: TournamentId;
     name: string;
+    email: string | null;
     institutionId: InstitutionId | null;
     breaking: boolean;
     independent: boolean;

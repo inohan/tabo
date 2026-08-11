@@ -1,5 +1,5 @@
 import { SpeakerRepositoryPort } from 'src/shared/domain/repository';
-import { Db } from '../persistence/db';
+import { Db, DbSchema } from '../persistence/db';
 import { err, ok, Result } from 'neverthrow';
 import {
   Speaker,
@@ -11,7 +11,7 @@ import {
   NotFoundError,
   SaveFailedError,
 } from 'src/shared/domain';
-import { sql } from 'kysely';
+import { Selectable } from 'kysely';
 
 export class SpeakerRepository extends SpeakerRepositoryPort {
   constructor(private readonly db: Db) {
@@ -27,20 +27,7 @@ export class SpeakerRepository extends SpeakerRepositoryPort {
   }): Promise<Result<Speaker, NotFoundError>> {
     const speaker = await this.db
       .selectFrom('speaker')
-      .select((eb) => [
-        'tournamentId',
-        'id',
-        'name',
-        'institutionId',
-        'teamId',
-        'anonymous',
-        'email',
-        sql<
-          number[]
-        >`ARRAY(${eb.selectFrom('speakerSpeakerCategory').select('speakerCategoryId').whereRef('speakerSpeakerCategory.tournamentId', '=', 'speaker.tournamentId').whereRef('speakerSpeakerCategory.speakerId', '=', 'speaker.id')})`.as(
-          'categories',
-        ),
-      ])
+      .selectAll()
       .where('tournamentId', '=', tournamentId)
       .where('id', '=', speakerId)
       .executeTakeFirst();
@@ -59,20 +46,7 @@ export class SpeakerRepository extends SpeakerRepositoryPort {
   ): Promise<Result<Speaker[], never>> {
     const speakers = await this.db
       .selectFrom('speaker')
-      .select((eb) => [
-        'tournamentId',
-        'id',
-        'name',
-        'institutionId',
-        'teamId',
-        'anonymous',
-        'email',
-        sql<
-          number[]
-        >`ARRAY(${eb.selectFrom('speakerSpeakerCategory').select('speakerCategoryId').whereRef('speakerSpeakerCategory.tournamentId', '=', 'speaker.tournamentId').whereRef('speakerSpeakerCategory.speakerId', '=', 'speaker.id')})`.as(
-          'categories',
-        ),
-      ])
+      .selectAll()
       .where('tournamentId', '=', tournamentId)
       .execute();
 
@@ -88,20 +62,7 @@ export class SpeakerRepository extends SpeakerRepositoryPort {
   }): Promise<Result<Speaker[], never>> {
     const speakers = await this.db
       .selectFrom('speaker')
-      .select((eb) => [
-        'tournamentId',
-        'id',
-        'name',
-        'institutionId',
-        'teamId',
-        'anonymous',
-        'email',
-        sql<
-          number[]
-        >`ARRAY(${eb.selectFrom('speakerSpeakerCategory').select('speakerCategoryId').whereRef('speakerSpeakerCategory.tournamentId', '=', 'speaker.tournamentId').whereRef('speakerSpeakerCategory.speakerId', '=', 'speaker.id')})`.as(
-          'categories',
-        ),
-      ])
+      .selectAll()
       .where('tournamentId', '=', tournamentId)
       .where('teamId', '=', teamId)
       .execute();
@@ -120,63 +81,33 @@ export class SpeakerRepository extends SpeakerRepositoryPort {
       email,
       categories,
     } = speaker;
-    try {
-      await this.db.transaction().execute(async (trx) => {
-        const saved = await trx
-          .insertInto('speaker')
-          .values({
-            tournamentId,
-            id,
-            name,
-            institutionId,
-            teamId,
-            anonymous,
-            email,
-          })
-          .onConflict((oc) =>
-            oc.columns(['tournamentId', 'id']).doUpdateSet({
-              name,
-              institutionId,
-              teamId,
-              anonymous,
-              email,
-            }),
-          )
-          .returningAll()
-          .executeTakeFirst();
-        if (!saved) {
-          throw new SaveFailedError(
-            `Failed to save speaker ${id} in tournament ${tournamentId}`,
-          );
-        }
-        await trx
-          .deleteFrom('speakerSpeakerCategory')
-          .where('tournamentId', '=', tournamentId)
-          .where('speakerId', '=', id)
-          .where('speakerCategoryId', 'not in', categories)
-          .execute();
-        if (categories.length > 0) {
-          await trx
-            .insertInto('speakerSpeakerCategory')
-            .values(
-              categories.map((speakerCategoryId) => ({
-                tournamentId,
-                speakerId: id,
-                speakerCategoryId,
-              })),
-            )
-            .onConflict((oc) =>
-              oc
-                .columns(['tournamentId', 'speakerId', 'speakerCategoryId'])
-                .doNothing(),
-            )
-            .execute();
-        }
-      });
-    } catch (error) {
+    const saved = await this.db
+      .insertInto('speaker')
+      .values({
+        tournamentId,
+        id,
+        name,
+        institutionId,
+        teamId,
+        anonymous,
+        email,
+        categories,
+      })
+      .onConflict((oc) =>
+        oc.columns(['tournamentId', 'id']).doUpdateSet({
+          name,
+          institutionId,
+          teamId,
+          anonymous,
+          email,
+          categories,
+        }),
+      )
+      .executeTakeFirst();
+    if (saved.numInsertedOrUpdatedRows !== 1n) {
       return err(
         new SaveFailedError(
-          `Failed to save speaker ${id} in tournament ${tournamentId}: ${error as Error}`,
+          `Failed to save speaker id ${id} in tournament ${tournamentId}`,
         ),
       );
     }
@@ -200,16 +131,7 @@ export class SpeakerRepository extends SpeakerRepositoryPort {
   }
 }
 
-function toModel(row: {
-  tournamentId: string;
-  id: number;
-  name: string;
-  institutionId: number | null;
-  teamId: number;
-  anonymous: boolean;
-  email: string | null;
-  categories: number[];
-}): Speaker {
+function toModel(row: Selectable<DbSchema['speaker']>): Speaker {
   return Speaker.init({
     id: SpeakerId.init(row.id),
     tournamentId: TournamentId.init(row.tournamentId),

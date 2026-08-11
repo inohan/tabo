@@ -1,5 +1,5 @@
 import { InstitutionRepositoryPort } from 'src/shared/domain/repository';
-import { Db } from '../persistence/db';
+import { Db, DbSchema } from '../persistence/db';
 import { err, ok, Result } from 'neverthrow';
 import {
   Institution,
@@ -8,6 +8,7 @@ import {
   NotFoundError,
   SaveFailedError,
 } from 'src/shared/domain';
+import { Selectable } from 'kysely';
 
 export class InstitutionRepository extends InstitutionRepositoryPort {
   constructor(private readonly db: Db) {
@@ -67,9 +68,8 @@ export class InstitutionRepository extends InstitutionRepositoryPort {
           updatedAt: new Date(),
         }),
       )
-      .returningAll()
       .executeTakeFirst();
-    if (!saved) {
+    if (saved.numInsertedOrUpdatedRows !== 1n) {
       return err(
         new SaveFailedError(
           `Failed to save institution ${id} in tournament ${tournamentId}`,
@@ -96,12 +96,7 @@ export class InstitutionRepository extends InstitutionRepositoryPort {
   }
 }
 
-function toModel(row: {
-  tournamentId: string;
-  id: number;
-  name: string;
-  code: string;
-}): Institution {
+function toModel(row: Selectable<DbSchema['institution']>): Institution {
   return Institution.init({
     id: InstitutionId.init(row.id),
     tournamentId: TournamentId.init(row.tournamentId),

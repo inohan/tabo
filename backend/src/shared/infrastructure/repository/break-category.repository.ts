@@ -1,5 +1,5 @@
 import { BreakCategoryRepositoryPort } from 'src/shared/domain/repository';
-import { Db } from '../persistence/db';
+import { Db, DbSchema } from '../persistence/db';
 import { err, ok, Result } from 'neverthrow';
 import {
   BreakCategory,
@@ -8,6 +8,7 @@ import {
   NotFoundError,
   SaveFailedError,
 } from 'src/shared/domain';
+import { Selectable } from 'kysely';
 
 export class BreakCategoryRepository extends BreakCategoryRepositoryPort {
   constructor(private readonly db: Db) {
@@ -86,9 +87,8 @@ export class BreakCategoryRepository extends BreakCategoryRepositoryPort {
           priority,
         }),
       )
-      .returningAll()
       .executeTakeFirst();
-    if (!saved) {
+    if (saved.numInsertedOrUpdatedRows !== 1n) {
       return err(
         new SaveFailedError(
           `Failed to save break category ${id} in tournament ${tournamentId}`,
@@ -117,17 +117,7 @@ export class BreakCategoryRepository extends BreakCategoryRepositoryPort {
   }
 }
 
-function toModel(row: {
-  tournamentId: string;
-  id: number;
-  name: string;
-  slug: string;
-  seq: number;
-  breakSize: number;
-  reserveSize: number;
-  isGeneral: boolean;
-  priority: number;
-}): BreakCategory {
+function toModel(row: Selectable<DbSchema['breakCategory']>): BreakCategory {
   return BreakCategory.init({
     id: BreakCategoryId.init(row.id),
     tournamentId: TournamentId.init(row.tournamentId),

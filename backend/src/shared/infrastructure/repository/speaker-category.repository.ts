@@ -1,5 +1,5 @@
 import { SpeakerCategoryRepositoryPort } from 'src/shared/domain/repository';
-import { Db } from '../persistence/db';
+import { Db, DbSchema } from '../persistence/db';
 import { err, ok, Result } from 'neverthrow';
 import {
   SpeakerCategory,
@@ -8,6 +8,7 @@ import {
   NotFoundError,
   SaveFailedError,
 } from 'src/shared/domain';
+import { Selectable } from 'kysely';
 
 export class SpeakerCategoryRepository extends SpeakerCategoryRepositoryPort {
   constructor(private readonly db: Db) {
@@ -58,9 +59,8 @@ export class SpeakerCategoryRepository extends SpeakerCategoryRepositoryPort {
       .onConflict((oc) =>
         oc.columns(['tournamentId', 'id']).doUpdateSet({ name, slug, seq }),
       )
-      .returningAll()
       .executeTakeFirst();
-    if (!saved) {
+    if (saved.numInsertedOrUpdatedRows !== 1n) {
       return err(
         new SaveFailedError(
           `Failed to save speaker category ${id} in tournament ${tournamentId}`,
@@ -89,13 +89,9 @@ export class SpeakerCategoryRepository extends SpeakerCategoryRepositoryPort {
   }
 }
 
-function toModel(row: {
-  tournamentId: string;
-  id: number;
-  name: string;
-  slug: string;
-  seq: number;
-}): SpeakerCategory {
+function toModel(
+  row: Selectable<DbSchema['speakerCategory']>,
+): SpeakerCategory {
   return SpeakerCategory.init({
     id: SpeakerCategoryId.init(row.id),
     tournamentId: TournamentId.init(row.tournamentId),

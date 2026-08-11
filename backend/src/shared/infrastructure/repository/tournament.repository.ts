@@ -1,5 +1,5 @@
 import { TournamentRepositoryPort } from 'src/shared/domain/repository';
-import { Db } from '../persistence/db';
+import { Db, DbSchema } from '../persistence/db';
 import { err, ok, Result } from 'neverthrow';
 import {
   TournamentId,
@@ -7,6 +7,7 @@ import {
   NotFoundError,
   SaveFailedError,
 } from 'src/shared/domain';
+import { Selectable } from 'kysely';
 
 export class TournamentRepository extends TournamentRepositoryPort {
   constructor(private readonly db: Db) {
@@ -61,7 +62,7 @@ export class TournamentRepository extends TournamentRepositoryPort {
         }),
       )
       .executeTakeFirst();
-    if (saved === undefined) {
+    if (saved.numInsertedOrUpdatedRows !== 1n) {
       return err(
         new SaveFailedError(`Failed to save tournament with id ${id}`),
       );
@@ -85,15 +86,7 @@ export class TournamentRepository extends TournamentRepositoryPort {
   }
 }
 
-function toModel(row: {
-  tournamentId: string;
-  baseUrl: string;
-  name: string;
-  shortName: string;
-  slug: string;
-  id: number;
-  token: string;
-}): Tournament {
+function toModel(row: Selectable<DbSchema['tournament']>): Tournament {
   return Tournament.init({
     tournamentId: TournamentId.init(row.tournamentId),
     baseUrl: row.baseUrl,

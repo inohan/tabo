@@ -4,7 +4,6 @@ import {
   primaryKey,
   timestamp,
   boolean,
-  foreignKey,
   numeric,
 } from 'drizzle-orm/pg-core';
 import {
@@ -30,9 +29,7 @@ export const tournamentTable = sharedSchema.table('tournament', {
 export const institutionTable = sharedSchema.table(
   'institution',
   {
-    tournamentId: varchar()
-      .notNull()
-      .references(() => tournamentTable.tournamentId, { onDelete: 'cascade' }),
+    tournamentId: varchar().notNull(),
     id: integer().notNull(),
     name: varchar().notNull(),
     code: varchar().notNull(),
@@ -42,145 +39,44 @@ export const institutionTable = sharedSchema.table(
   (table) => [primaryKey({ columns: [table.tournamentId, table.id] })],
 );
 
-// TODO: Change on delete of institution to cascade only to institutionId
 export const teamTable = sharedSchema.table(
   'team',
   {
-    tournamentId: varchar()
-      .notNull()
-      .references(() => tournamentTable.tournamentId, { onDelete: 'cascade' }),
+    tournamentId: varchar().notNull(),
     id: integer().notNull(),
     reference: varchar().notNull(),
     shortReference: varchar().notNull(),
     institutionId: integer(),
+    institutionConflicts: integer().array().notNull(),
+    breakCategories: integer().array().notNull(),
     emoji: varchar({ length: 1 }),
     codeName: varchar().notNull(),
     useInstitutionPrefix: boolean().notNull(),
     shortName: varchar().notNull(),
     longName: varchar().notNull(),
   },
-  (table) => [
-    primaryKey({ columns: [table.tournamentId, table.id] }),
-    foreignKey({
-      columns: [table.tournamentId, table.institutionId],
-      foreignColumns: [institutionTable.tournamentId, institutionTable.id],
-      name: 'team_institution_fk',
-      // @ts-expect-error Workaround for https://github.com/drizzle-team/drizzle-orm/issues/5684
-    }).onDelete(`set null (institution_id)`),
-  ],
+  (table) => [primaryKey({ columns: [table.tournamentId, table.id] })],
 );
 
-export const teamInstitutionConflictTable = sharedSchema.table(
-  'team_institution_conflict',
-  {
-    tournamentId: varchar().notNull(),
-    teamId: integer().notNull(),
-    institutionId: integer().notNull(),
-  },
-  (table) => [
-    primaryKey({
-      columns: [table.tournamentId, table.teamId, table.institutionId],
-    }),
-    foreignKey({
-      columns: [table.tournamentId, table.teamId],
-      foreignColumns: [teamTable.tournamentId, teamTable.id],
-      name: 'team_institution_conflict_team_fk',
-    }).onDelete('cascade'),
-    foreignKey({
-      columns: [table.tournamentId, table.institutionId],
-      foreignColumns: [institutionTable.tournamentId, institutionTable.id],
-      name: 'team_institution_conflict_institution_fk',
-    }).onDelete('cascade'),
-  ],
-);
-
-export const teamBreakCategoryTable = sharedSchema.table(
-  'team_break_category',
-  {
-    tournamentId: varchar().notNull(),
-    teamId: integer().notNull(),
-    breakCategoryId: integer().notNull(),
-  },
-  (table) => [
-    primaryKey({
-      columns: [table.tournamentId, table.teamId, table.breakCategoryId],
-    }),
-    foreignKey({
-      columns: [table.tournamentId, table.teamId],
-      foreignColumns: [teamTable.tournamentId, teamTable.id],
-      name: 'team_bc_team_fk',
-    }).onDelete('cascade'),
-    foreignKey({
-      columns: [table.tournamentId, table.breakCategoryId],
-      foreignColumns: [breakCategoryTable.tournamentId, breakCategoryTable.id],
-      name: 'team_bc_bc_fk',
-    }).onDelete('cascade'),
-  ],
-);
-
-// TODO: Change on delete of institution to cascade only to institutionId
 export const speakerTable = sharedSchema.table(
   'speaker',
   {
-    tournamentId: varchar()
-      .notNull()
-      .references(() => tournamentTable.tournamentId, { onDelete: 'cascade' }),
+    tournamentId: varchar().notNull(),
     id: integer().notNull(),
     name: varchar().notNull(),
-    institutionId: integer(),
+    institutionId: integer(), // TODO: isolate as different table
     teamId: integer().notNull(),
+    categories: integer().array().notNull(),
     anonymous: boolean().notNull(),
     email: varchar(),
   },
-  (table) => [
-    primaryKey({ columns: [table.tournamentId, table.id] }),
-    foreignKey({
-      columns: [table.tournamentId, table.teamId],
-      foreignColumns: [teamTable.tournamentId, teamTable.id],
-      name: 'speaker_team_fk',
-    }).onDelete('cascade'),
-    foreignKey({
-      columns: [table.tournamentId, table.institutionId],
-      foreignColumns: [institutionTable.tournamentId, institutionTable.id],
-      name: 'speaker_institution_fk',
-      // @ts-expect-error Workaround for https://github.com/drizzle-team/drizzle-orm/issues/5684
-    }).onDelete(`set null (institution_id)`),
-  ],
-);
-
-export const speakerSpeakerCategoryTable = sharedSchema.table(
-  'speaker_speaker_category',
-  {
-    tournamentId: varchar().notNull(),
-    speakerId: integer().notNull(),
-    speakerCategoryId: integer().notNull(),
-  },
-  (table) => [
-    primaryKey({
-      columns: [table.tournamentId, table.speakerId, table.speakerCategoryId],
-    }),
-    foreignKey({
-      columns: [table.tournamentId, table.speakerId],
-      foreignColumns: [speakerTable.tournamentId, speakerTable.id],
-      name: 'speaker_sc_speaker_fk',
-    }).onDelete('cascade'),
-    foreignKey({
-      columns: [table.tournamentId, table.speakerCategoryId],
-      foreignColumns: [
-        speakerCategoryTable.tournamentId,
-        speakerCategoryTable.id,
-      ],
-      name: 'speaker_sc_sc_fk',
-    }).onDelete('cascade'),
-  ],
+  (table) => [primaryKey({ columns: [table.tournamentId, table.id] })],
 );
 
 export const breakCategoryTable = sharedSchema.table(
   'break_category',
   {
-    tournamentId: varchar()
-      .notNull()
-      .references(() => tournamentTable.tournamentId, { onDelete: 'cascade' }),
+    tournamentId: varchar().notNull(),
     id: integer().notNull(),
     name: varchar().notNull(),
     slug: varchar().notNull(),
@@ -196,9 +92,7 @@ export const breakCategoryTable = sharedSchema.table(
 export const speakerCategoryTable = sharedSchema.table(
   'speaker_category',
   {
-    tournamentId: varchar()
-      .notNull()
-      .references(() => tournamentTable.tournamentId, { onDelete: 'cascade' }),
+    tournamentId: varchar().notNull(),
     id: integer().notNull(),
     name: varchar().notNull(),
     slug: varchar().notNull(),
@@ -207,109 +101,28 @@ export const speakerCategoryTable = sharedSchema.table(
   (table) => [primaryKey({ columns: [table.tournamentId, table.id] })],
 );
 
-// TODO: Change on delete of institution to cascade only to institutionId via migration
 export const adjudicatorTable = sharedSchema.table(
   'adjudicator',
   {
-    tournamentId: varchar()
-      .notNull()
-      .references(() => tournamentTable.tournamentId, { onDelete: 'cascade' }),
+    tournamentId: varchar().notNull(),
     id: integer().notNull(),
     name: varchar().notNull(),
+    email: varchar(),
     institutionId: integer(), // Hard-code name for set null constraint
     breaking: boolean().notNull(),
     independent: boolean().notNull(),
     adjCore: boolean().notNull(),
+    institutionConflicts: integer().array().notNull(),
+    teamConflicts: integer().array().notNull(),
+    adjudicatorConflicts: integer().array().notNull(),
   },
-  (table) => [
-    primaryKey({ columns: [table.tournamentId, table.id] }),
-    foreignKey({
-      columns: [table.tournamentId, table.institutionId],
-      foreignColumns: [institutionTable.tournamentId, institutionTable.id],
-      name: 'adjudicator_institution_fk',
-      // @ts-expect-error Workaround for https://github.com/drizzle-team/drizzle-orm/issues/5684
-    }).onDelete(`set null (institution_id)`),
-  ],
-);
-
-export const adjudicatorInstitutionConflictTable = sharedSchema.table(
-  'adjudicator_institution_conflict',
-  {
-    tournamentId: varchar().notNull(),
-    adjudicatorId: integer().notNull(),
-    institutionId: integer().notNull(),
-  },
-  (table) => [
-    primaryKey({
-      columns: [table.tournamentId, table.adjudicatorId, table.institutionId],
-    }),
-    foreignKey({
-      columns: [table.tournamentId, table.adjudicatorId],
-      foreignColumns: [adjudicatorTable.tournamentId, adjudicatorTable.id],
-      name: 'adj_inst_conflict_adj_fk',
-    }).onDelete('cascade'),
-    foreignKey({
-      columns: [table.tournamentId, table.institutionId],
-      foreignColumns: [institutionTable.tournamentId, institutionTable.id],
-      name: 'adj_inst_conflict_inst_fk',
-    }).onDelete('cascade'),
-  ],
-);
-
-export const adjudicatorAdjudicatorConflictTable = sharedSchema.table(
-  'adjudicator_adjudicator_conflict',
-  {
-    tournamentId: varchar().notNull(),
-    adjudicatorAId: integer().notNull(),
-    adjudicatorBId: integer().notNull(),
-  },
-  (table) => [
-    primaryKey({
-      columns: [table.tournamentId, table.adjudicatorAId, table.adjudicatorBId],
-    }),
-    foreignKey({
-      columns: [table.tournamentId, table.adjudicatorAId],
-      foreignColumns: [adjudicatorTable.tournamentId, adjudicatorTable.id],
-      name: 'adj_adj_conflict_a_fk',
-    }).onDelete('cascade'),
-    foreignKey({
-      columns: [table.tournamentId, table.adjudicatorBId],
-      foreignColumns: [adjudicatorTable.tournamentId, adjudicatorTable.id],
-      name: 'adj_adj_conflict_b_fk',
-    }).onDelete('cascade'),
-  ],
-);
-
-export const adjudicatorTeamConflictTable = sharedSchema.table(
-  'adjudicator_team_conflict',
-  {
-    tournamentId: varchar().notNull(),
-    adjudicatorId: integer().notNull(),
-    teamId: integer().notNull(),
-  },
-  (table) => [
-    primaryKey({
-      columns: [table.tournamentId, table.adjudicatorId, table.teamId],
-    }),
-    foreignKey({
-      columns: [table.tournamentId, table.adjudicatorId],
-      foreignColumns: [adjudicatorTable.tournamentId, adjudicatorTable.id],
-      name: 'adj_team_conflict_adj_fk',
-    }).onDelete('cascade'),
-    foreignKey({
-      columns: [table.tournamentId, table.teamId],
-      foreignColumns: [teamTable.tournamentId, teamTable.id],
-      name: 'adj_team_conflict_team_fk',
-    }).onDelete('cascade'),
-  ],
+  (table) => [primaryKey({ columns: [table.tournamentId, table.id] })],
 );
 
 export const venueTable = sharedSchema.table(
   'venue',
   {
-    tournamentId: varchar()
-      .notNull()
-      .references(() => tournamentTable.tournamentId, { onDelete: 'cascade' }),
+    tournamentId: varchar().notNull(),
     id: integer().notNull(),
     name: varchar().notNull(),
     displayName: varchar().notNull(),
@@ -339,9 +152,7 @@ export const roundMotionsStatusPgEnum = sharedSchema.enum(
 export const roundTable = sharedSchema.table(
   'round',
   {
-    tournamentId: varchar()
-      .notNull()
-      .references(() => tournamentTable.tournamentId, { onDelete: 'cascade' }),
+    tournamentId: varchar().notNull(),
     id: integer().notNull(),
     breakCategoryId: integer(),
     displayName: varchar().notNull(),
@@ -359,12 +170,5 @@ export const roundTable = sharedSchema.table(
     motionsStatus: roundMotionsStatusPgEnum().notNull(),
     weight: numeric().notNull(),
   },
-  (table) => [
-    primaryKey({ columns: [table.tournamentId, table.id] }),
-    foreignKey({
-      columns: [table.tournamentId, table.breakCategoryId],
-      foreignColumns: [breakCategoryTable.tournamentId, breakCategoryTable.id],
-      name: 'round_break_category_fk',
-    }).onDelete('cascade'),
-  ],
+  (table) => [primaryKey({ columns: [table.tournamentId, table.id] })],
 );

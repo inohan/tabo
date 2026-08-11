@@ -1,5 +1,5 @@
 import { AdjudicatorRepositoryPort } from 'src/shared/domain/repository';
-import { Db } from '../persistence/db';
+import { Db, DbSchema } from '../persistence/db';
 import { err, ok, Result } from 'neverthrow';
 import {
   Adjudicator,
@@ -10,7 +10,7 @@ import {
   NotFoundError,
   SaveFailedError,
 } from 'src/shared/domain';
-import { sql } from 'kysely';
+import { Selectable } from 'kysely';
 
 export class AdjudicatorRepository extends AdjudicatorRepositoryPort {
   constructor(private readonly db: Db) {
@@ -26,30 +26,7 @@ export class AdjudicatorRepository extends AdjudicatorRepositoryPort {
   }): Promise<Result<Adjudicator, NotFoundError>> {
     const adjudicator = await this.db
       .selectFrom('adjudicator')
-      .select((eb) => [
-        'tournamentId',
-        'id',
-        'name',
-        'institutionId',
-        'breaking',
-        'independent',
-        'adjCore',
-        sql<
-          number[]
-        >`ARRAY(${eb.selectFrom('adjudicatorInstitutionConflict').select('institutionId').whereRef('adjudicatorInstitutionConflict.tournamentId', '=', 'adjudicator.tournamentId').whereRef('adjudicatorInstitutionConflict.adjudicatorId', '=', 'adjudicator.id')})`.as(
-          'institutionConflicts',
-        ),
-        sql<
-          number[]
-        >`ARRAY(${eb.selectFrom('adjudicatorTeamConflict').select('teamId').whereRef('adjudicatorTeamConflict.tournamentId', '=', 'adjudicator.tournamentId').whereRef('adjudicatorTeamConflict.adjudicatorId', '=', 'adjudicator.id')})`.as(
-          'teamConflicts',
-        ),
-        sql<
-          number[]
-        >`ARRAY(${eb.selectFrom('adjudicatorAdjudicatorConflict').select('adjudicatorBId').whereRef('adjudicatorAdjudicatorConflict.tournamentId', '=', 'adjudicator.tournamentId').whereRef('adjudicatorAdjudicatorConflict.adjudicatorAId', '=', 'adjudicator.id')})`.as(
-          'adjudicatorConflicts',
-        ),
-      ])
+      .selectAll()
       .where('tournamentId', '=', tournamentId)
       .where('id', '=', adjudicatorId)
       .executeTakeFirst();
@@ -68,30 +45,7 @@ export class AdjudicatorRepository extends AdjudicatorRepositoryPort {
   ): Promise<Result<Adjudicator[], never>> {
     const adjudicators = await this.db
       .selectFrom('adjudicator')
-      .select((eb) => [
-        'tournamentId',
-        'id',
-        'name',
-        'institutionId',
-        'breaking',
-        'independent',
-        'adjCore',
-        sql<
-          number[]
-        >`ARRAY(${eb.selectFrom('adjudicatorInstitutionConflict').select('institutionId').whereRef('adjudicatorInstitutionConflict.tournamentId', '=', 'adjudicator.tournamentId').whereRef('adjudicatorInstitutionConflict.adjudicatorId', '=', 'adjudicator.id')})`.as(
-          'institutionConflicts',
-        ),
-        sql<
-          number[]
-        >`ARRAY(${eb.selectFrom('adjudicatorTeamConflict').select('teamId').whereRef('adjudicatorTeamConflict.tournamentId', '=', 'adjudicator.tournamentId').whereRef('adjudicatorTeamConflict.adjudicatorId', '=', 'adjudicator.id')})`.as(
-          'teamConflicts',
-        ),
-        sql<
-          number[]
-        >`ARRAY(${eb.selectFrom('adjudicatorAdjudicatorConflict').select('adjudicatorBId').whereRef('adjudicatorAdjudicatorConflict.tournamentId', '=', 'adjudicator.tournamentId').whereRef('adjudicatorAdjudicatorConflict.adjudicatorAId', '=', 'adjudicator.id')})`.as(
-          'adjudicatorConflicts',
-        ),
-      ])
+      .selectAll()
       .where('tournamentId', '=', tournamentId)
       .execute();
 
@@ -111,109 +65,37 @@ export class AdjudicatorRepository extends AdjudicatorRepositoryPort {
       teamConflicts,
       adjudicatorConflicts,
     } = adjudicator;
-    try {
-      await this.db.transaction().execute(async (trx) => {
-        const saved = await trx
-          .insertInto('adjudicator')
-          .values({
-            tournamentId,
-            id,
-            name,
-            institutionId,
-            breaking,
-            independent,
-            adjCore,
-          })
-          .onConflict((oc) =>
-            oc.columns(['tournamentId', 'id']).doUpdateSet({
-              name,
-              institutionId,
-              breaking,
-              independent,
-              adjCore,
-            }),
-          )
-          .returningAll()
-          .executeTakeFirst();
-        if (!saved) {
-          throw new SaveFailedError(
-            `Failed to save adjudicator ${id} in tournament ${tournamentId}`,
-          );
-        }
-        await trx
-          .deleteFrom('adjudicatorInstitutionConflict')
-          .where('tournamentId', '=', tournamentId)
-          .where('adjudicatorId', '=', id)
-          .where('institutionId', 'not in', institutionConflicts)
-          .execute();
-        if (institutionConflicts.length > 0) {
-          await trx
-            .insertInto('adjudicatorInstitutionConflict')
-            .values(
-              institutionConflicts.map((instId) => ({
-                tournamentId,
-                adjudicatorId: id,
-                institutionId: instId,
-              })),
-            )
-            .onConflict((oc) =>
-              oc
-                .columns(['tournamentId', 'adjudicatorId', 'institutionId'])
-                .doNothing(),
-            )
-            .execute();
-        }
-        await trx
-          .deleteFrom('adjudicatorTeamConflict')
-          .where('tournamentId', '=', tournamentId)
-          .where('adjudicatorId', '=', id)
-          .where('teamId', 'not in', teamConflicts)
-          .execute();
-        if (teamConflicts.length > 0) {
-          await trx
-            .insertInto('adjudicatorTeamConflict')
-            .values(
-              teamConflicts.map((teamId) => ({
-                tournamentId,
-                adjudicatorId: id,
-                teamId,
-              })),
-            )
-            .onConflict((oc) =>
-              oc
-                .columns(['tournamentId', 'adjudicatorId', 'teamId'])
-                .doNothing(),
-            )
-            .execute();
-        }
-        await trx
-          .deleteFrom('adjudicatorAdjudicatorConflict')
-          .where('tournamentId', '=', tournamentId)
-          .where('adjudicatorAId', '=', id)
-          .where('adjudicatorBId', 'not in', adjudicatorConflicts)
-          .execute();
-        if (adjudicatorConflicts.length > 0) {
-          await trx
-            .insertInto('adjudicatorAdjudicatorConflict')
-            .values(
-              adjudicatorConflicts.map((adjBId) => ({
-                tournamentId,
-                adjudicatorAId: id,
-                adjudicatorBId: adjBId,
-              })),
-            )
-            .onConflict((oc) =>
-              oc
-                .columns(['tournamentId', 'adjudicatorAId', 'adjudicatorBId'])
-                .doNothing(),
-            )
-            .execute();
-        }
-      });
-    } catch (error) {
+    const saved = await this.db
+      .insertInto('adjudicator')
+      .values({
+        tournamentId,
+        id,
+        name,
+        institutionId,
+        breaking,
+        independent,
+        adjCore,
+        institutionConflicts,
+        teamConflicts,
+        adjudicatorConflicts,
+      })
+      .onConflict((oc) =>
+        oc.columns(['tournamentId', 'id']).doUpdateSet({
+          name,
+          institutionId,
+          breaking,
+          independent,
+          adjCore,
+          institutionConflicts,
+          teamConflicts,
+          adjudicatorConflicts,
+        }),
+      )
+      .executeTakeFirst();
+    if (saved.numInsertedOrUpdatedRows !== 1n) {
       return err(
         new SaveFailedError(
-          `Failed to save adjudicator ${id} in tournament ${tournamentId}: ${error as Error}`,
+          `Failed to save adjudicator id ${id} in tournament ${tournamentId}`,
         ),
       );
     }
@@ -237,22 +119,12 @@ export class AdjudicatorRepository extends AdjudicatorRepositoryPort {
   }
 }
 
-function toModel(row: {
-  tournamentId: string;
-  id: number;
-  name: string;
-  institutionId: number | null;
-  breaking: boolean;
-  independent: boolean;
-  adjCore: boolean;
-  institutionConflicts: number[];
-  teamConflicts: number[];
-  adjudicatorConflicts: number[];
-}): Adjudicator {
+function toModel(row: Selectable<DbSchema['adjudicator']>): Adjudicator {
   return Adjudicator.init({
     id: AdjudicatorId.init(row.id),
     tournamentId: TournamentId.init(row.tournamentId),
     name: row.name,
+    email: row.email,
     institutionId: row.institutionId
       ? InstitutionId.init(row.institutionId)
       : null,
