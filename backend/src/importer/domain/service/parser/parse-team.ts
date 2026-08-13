@@ -11,6 +11,7 @@ import {
   StringBoolean,
   nullish,
 } from './shared';
+import { throwUnexpected_ } from 'src/lib/throw';
 
 const TeamReference = v.pipe(v.string(), v.maxGraphemes(150));
 const TeamShortReference = v.pipe(v.string(), v.maxGraphemes(35));
@@ -189,14 +190,21 @@ const generateTeamSchema = (
         ],
       };
     }),
+    TeamImport,
   );
+
+/** Object spread drops index signatures, so the shapes below are annotated explicitly. */
+type SpeakerCells = Record<string, CellValue> & { __col: number };
+type GroupedTeamCells = Record<string, CellValue | SpeakerCells[]> & {
+  speakers: SpeakerCells[];
+};
 
 const GroupSpeakersSchema = v.pipe(
   v.record(
     v.string(),
     v.nullable(v.union([v.string(), v.boolean(), v.number()])),
   ),
-  v.transform((input) => {
+  v.transform((input): GroupedTeamCells => {
     const speakers = new Map<number, Record<string, CellValue>>();
     const rest: Record<string, CellValue> = {};
     for (const [key, value] of Object.entries(input)) {
@@ -206,15 +214,19 @@ const GroupSpeakersSchema = v.pipe(
         continue;
       }
       const idx = Number(m[1]);
-      const field = m[2][0].toLowerCase() + m[2].slice(1);
-      speakers.set(idx, { ...speakers.get(idx), [field]: value });
+      const fieldName = m[2] ?? throwUnexpected_();
+      const fieldNameCamelCased = v.parse(
+        v.pipe(v.string(), v.toCamelCase(), v.minLength(1)),
+        fieldName,
+      );
+      speakers.set(idx, { ...speakers.get(idx), [fieldNameCamelCased]: value });
     }
     return {
       ...rest,
       speakers: [...speakers.entries()]
         .sort(([a], [b]) => a - b)
-        .map(([, s]) => s)
-        .filter((rec) => rec.name != null), //Only filter out speakers with name entered (happens when there are blank speakerXName fields)
+        .map(([index, record]): SpeakerCells => ({ ...record, __col: index }))
+        .filter((rec) => rec['name'] != null), //Only filter out speakers with name entered (happens when there are blank speakerXName fields)
     };
   }),
 );
@@ -252,7 +264,7 @@ export const parseGroupedTeamImportRow = (
   );
   const result = v.safeParse(parseSchema, groupedData);
   if (result.success) {
-    return ok(result.output as TeamImport);
+    return ok(result.output);
   }
   return err(ParseFailedError.fromIssue<typeof parseSchema>(result.issues));
 };

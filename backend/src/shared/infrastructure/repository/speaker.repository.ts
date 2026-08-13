@@ -114,6 +114,56 @@ export class SpeakerRepository extends SpeakerRepositoryPort {
     return ok();
   }
 
+  async saveMany(speakers: Speaker[]): Promise<Result<void, SaveFailedError>> {
+    if (speakers.length === 0) {
+      return ok();
+    }
+    const saved = await this.db
+      .insertInto('speaker')
+      .values(
+        speakers.map(
+          ({
+            tournamentId,
+            id,
+            name,
+            institutionId,
+            teamId,
+            anonymous,
+            email,
+            categories,
+          }) => ({
+            tournamentId,
+            id,
+            name,
+            institutionId,
+            teamId,
+            anonymous,
+            email,
+            categories,
+          }),
+        ),
+      )
+      .onConflict((oc) =>
+        oc.columns(['tournamentId', 'id']).doUpdateSet({
+          name: (eb) => eb.ref('excluded.name'),
+          institutionId: (eb) => eb.ref('excluded.institutionId'),
+          teamId: (eb) => eb.ref('excluded.teamId'),
+          anonymous: (eb) => eb.ref('excluded.anonymous'),
+          email: (eb) => eb.ref('excluded.email'),
+          categories: (eb) => eb.ref('excluded.categories'),
+        }),
+      )
+      .executeTakeFirst();
+    if (saved.numInsertedOrUpdatedRows !== BigInt(speakers.length)) {
+      return err(
+        new SaveFailedError(
+          `Failed to save speaker(s) ${speakers.map((s) => `(${s.tournamentId}, ${s.id})`).join(', ')}`,
+        ),
+      );
+    }
+    return ok();
+  }
+
   async delete(speaker: Speaker): Promise<Result<void, NotFoundError>> {
     const result = await this.db
       .deleteFrom('speaker')
@@ -124,6 +174,30 @@ export class SpeakerRepository extends SpeakerRepositoryPort {
       return err(
         new NotFoundError(
           `Speaker ${speaker.id} not found in tournament ${speaker.tournamentId}`,
+        ),
+      );
+    }
+    return ok();
+  }
+
+  async deleteMany(speakers: Speaker[]): Promise<Result<void, NotFoundError>> {
+    if (speakers.length === 0) {
+      return ok();
+    }
+    const deleted = await this.db
+      .deleteFrom('speaker')
+      .where((eb) =>
+        eb.eb(
+          eb.refTuple('tournamentId', 'id'),
+          'in',
+          speakers.map((speaker) => eb.tuple(speaker.tournamentId, speaker.id)),
+        ),
+      )
+      .executeTakeFirst();
+    if (deleted.numDeletedRows !== BigInt(speakers.length)) {
+      return err(
+        new NotFoundError(
+          `Speaker(s) ${speakers.map((s) => `(${s.tournamentId}, ${s.id})`).join(', ')} not found`,
         ),
       );
     }

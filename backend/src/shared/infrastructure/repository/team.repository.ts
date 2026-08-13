@@ -1,5 +1,5 @@
 import { TeamRepositoryPort } from 'src/shared/domain/repository';
-import { Db } from '../persistence/db';
+import { Db, DbSchema } from '../persistence/db';
 import { err, ok, Result } from 'neverthrow';
 import {
   Team,
@@ -11,7 +11,7 @@ import {
   NotFoundError,
   SaveFailedError,
 } from 'src/shared/domain';
-import { sql } from 'kysely';
+import { Selectable, sql } from 'kysely';
 
 export class TeamRepository extends TeamRepositoryPort {
   constructor(private readonly db: Db) {
@@ -145,6 +145,68 @@ export class TeamRepository extends TeamRepositoryPort {
     return ok();
   }
 
+  async saveMany(teams: Team[]): Promise<Result<void, SaveFailedError>> {
+    if (teams.length === 0) {
+      return ok();
+    }
+    const saved = await this.db
+      .insertInto('team')
+      .values(
+        teams.map(
+          ({
+            tournamentId,
+            id,
+            reference,
+            shortReference,
+            institutionId,
+            emoji,
+            codeName,
+            useInstitutionPrefix,
+            shortName,
+            longName,
+            institutionConflicts,
+            breakCategories,
+          }) => ({
+            tournamentId,
+            id,
+            reference,
+            shortReference,
+            institutionId,
+            emoji,
+            codeName,
+            useInstitutionPrefix,
+            shortName,
+            longName,
+            institutionConflicts,
+            breakCategories,
+          }),
+        ),
+      )
+      .onConflict((oc) =>
+        oc.columns(['tournamentId', 'id']).doUpdateSet({
+          reference: (eb) => eb.ref('excluded.reference'),
+          shortReference: (eb) => eb.ref('excluded.shortReference'),
+          institutionId: (eb) => eb.ref('excluded.institutionId'),
+          emoji: (eb) => eb.ref('excluded.emoji'),
+          codeName: (eb) => eb.ref('excluded.codeName'),
+          useInstitutionPrefix: (eb) => eb.ref('excluded.useInstitutionPrefix'),
+          shortName: (eb) => eb.ref('excluded.shortName'),
+          longName: (eb) => eb.ref('excluded.longName'),
+          institutionConflicts: (eb) => eb.ref('excluded.institutionConflicts'),
+          breakCategories: (eb) => eb.ref('excluded.breakCategories'),
+        }),
+      )
+      .executeTakeFirst();
+    if (saved.numInsertedOrUpdatedRows !== BigInt(teams.length)) {
+      return err(
+        new SaveFailedError(
+          `Failed to save team(s) ${teams.map((t) => `(${t.tournamentId}, ${t.id})`).join(', ')}`,
+        ),
+      );
+    }
+    return ok();
+  }
+
   async delete(team: Team): Promise<Result<void, NotFoundError>> {
     const result = await this.db
       .deleteFrom('team')
@@ -160,34 +222,35 @@ export class TeamRepository extends TeamRepositoryPort {
     }
     return ok();
   }
+
+  async deleteMany(teams: Team[]): Promise<Result<void, NotFoundError>> {
+    if (teams.length === 0) {
+      return ok();
+    }
+    const deleted = await this.db
+      .deleteFrom('team')
+      .where((eb) =>
+        eb.eb(
+          eb.refTuple('tournamentId', 'id'),
+          'in',
+          teams.map((team) => eb.tuple(team.tournamentId, team.id)),
+        ),
+      )
+      .executeTakeFirst();
+    if (deleted.numDeletedRows !== BigInt(teams.length)) {
+      return err(
+        new NotFoundError(
+          `Team(s) ${teams.map((t) => `(${t.tournamentId}, ${t.id})`).join(', ')} not found`,
+        ),
+      );
+    }
+    return ok();
+  }
 }
 
-// Used only for typing
-const selector = async (db: Db) =>
-  await db
-    .selectFrom('team')
-    .select((eb) => [
-      'tournamentId',
-      'id',
-      'reference',
-      'shortReference',
-      'institutionId',
-      'emoji',
-      'codeName',
-      'useInstitutionPrefix',
-      'shortName',
-      'longName',
-      'institutionConflicts',
-      'breakCategories',
-      sql<
-        number[]
-      >`ARRAY(${eb.selectFrom('speaker').select('id').whereRef('speaker.tournamentId', '=', 'team.tournamentId').whereRef('speaker.teamId', '=', 'team.id')})`.as(
-        'speakers',
-      ),
-    ])
-    .executeTakeFirstOrThrow();
-
-function toModel(row: Awaited<ReturnType<typeof selector>>): Team {
+function toModel(
+  row: Selectable<DbSchema['team']> & { speakers: number[] },
+): Team {
   return Team.init({
     id: TeamId.init(row.id),
     tournamentId: TournamentId.init(row.tournamentId),

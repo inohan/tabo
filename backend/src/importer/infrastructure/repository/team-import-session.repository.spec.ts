@@ -1,36 +1,38 @@
 import { createTestDb } from 'test/lib/db';
 import { Db } from '../persistence/db';
 import { sql } from 'kysely';
-import { ImportSessionRepository } from './import-session.repository';
+import { TeamImportSessionRepository } from './team-import-session.repository';
 import { expectErrResult, expectOkResult } from 'test/lib/expect-result';
 import { SaveFailedError, TournamentId } from '@shared/domain';
 import { castJson } from 'src/lib/json';
 import {
-  ImportSession,
-  ImportSessionId,
-  ImportTeamRow,
-} from '@importer/domain/models/import-session';
+  TeamImportSession,
+  TeamImportSessionId,
+  TeamImportRow,
+} from '@importer/domain/models/team-import-session';
 
 const generateTeamImportSession = () =>
-  ImportSession.create({
+  TeamImportSession.create({
     tournamentId: TournamentId.init('test_tournament'),
-    type: 'team',
     headers: ['reference', 'institution', 'breakCategories'],
     origin: {
       type: 'csv',
       id: 'test_csv',
     },
+    missingInstitutions: ['Institution A'],
+    missingBreakCategories: ['esl'],
+    missingSpeakerCategories: [],
     rows: [
-      ImportTeamRow.init({
+      TeamImportRow.init({
         raw: ['Team A', 'Institution A', 'open, esl'],
         success: true,
-        parsedTeam: {
+        parsed: {
           reference: 'Team A',
           institution: 'Institution A',
           breakCategories: ['open', 'esl'],
           speakers: [],
         },
-        matchedTeam: null,
+        matched: null,
         updateNecessity: {
           team: 'new',
         },
@@ -39,24 +41,24 @@ const generateTeamImportSession = () =>
         },
         doImport: true,
       }),
-      ImportTeamRow.init({
+      TeamImportRow.init({
         raw: [null, 'Institution B', null],
         success: false,
         error: 'Missing reference',
       }),
     ],
-  }) as Extract<ImportSession, { type: 'team' }>;
+  });
 
 describe('Importer DB', () => {
   let db: Db;
-  let repository: ImportSessionRepository;
+  let repository: TeamImportSessionRepository;
   beforeAll(() => {
     db = createTestDb('importer');
-    repository = new ImportSessionRepository(db);
+    repository = new TeamImportSessionRepository(db);
   });
 
   beforeEach(async () => {
-    await sql`TRUNCATE TABLE importer.import_session CASCADE`.execute(db);
+    await sql`TRUNCATE TABLE importer.team_import_session CASCADE`.execute(db);
   });
 
   afterAll(async () => {
@@ -66,7 +68,7 @@ describe('Importer DB', () => {
   test('Getting team session', async () => {
     const timestamp = new Date();
     await db
-      .insertInto('importSession')
+      .insertInto('teamImportSession')
       .values({
         sessionId: 'test_session',
         tournamentId: 'test_tournament',
@@ -74,10 +76,13 @@ describe('Importer DB', () => {
           type: 'csv',
           id: 'test_csv',
         }),
-        type: 'team',
         headers: castJson(['reference', 'institution', 'breakCategories']),
+        missingInstitutions: ['Institution A'],
+        missingBreakCategories: ['esl'],
+        missingSpeakerCategories: [],
         createdAt: timestamp,
         updatedAt: timestamp,
+        status: 'incomplete',
       })
       .execute();
     await db
@@ -118,34 +123,37 @@ describe('Importer DB', () => {
         },
       ])
       .execute();
-    const importSession = expectOkResult(
-      await repository.get({
+    const importSessions = expectOkResult(
+      await repository.getByTournament({
         tournamentId: TournamentId.init('test_tournament'),
-        type: 'team',
       }),
     );
-    expect(importSession).toEqual({
-      sessionId: 'test_session',
+    expect(importSessions.length).toBe(1);
+    expect(importSessions[0]).toEqual({
+      id: 'test_session',
       tournamentId: 'test_tournament',
       origin: {
         type: 'csv',
         id: 'test_csv',
       },
       headers: ['reference', 'institution', 'breakCategories'],
+      missingInstitutions: ['Institution A'],
+      missingBreakCategories: ['esl'],
+      missingSpeakerCategories: [],
       createdAt: timestamp,
       updatedAt: timestamp,
-      type: 'team',
+      status: 'incomplete',
       rows: [
         {
           raw: ['Team A', 'Institution A', 'open, esl'],
           success: true,
-          parsedTeam: {
+          parsed: {
             speakers: [],
             institution: 'Institution A',
             reference: 'Team A',
             breakCategories: ['open', 'esl'],
           },
-          matchedTeam: null,
+          matched: null,
           updateNecessity: {
             team: 'new',
           },
@@ -166,29 +174,29 @@ describe('Importer DB', () => {
   test('New import session can be saved', async () => {
     const importSession = generateTeamImportSession();
     expectOkResult(await repository.save(importSession));
-    const retrievedImportSession = expectOkResult(
+    const retrievedTeamImportSession = expectOkResult(
       await repository.get({
         tournamentId: TournamentId.init('test_tournament'),
-        type: 'team',
+        importSessionId: importSession.id,
       }),
     );
-    expect(retrievedImportSession).toEqual(importSession);
+    expect(retrievedTeamImportSession).toEqual(importSession);
   });
 
   test('Import session can be overwritten', async () => {
     const importSession = generateTeamImportSession();
     expectOkResult(await repository.save(importSession));
     const updatedAt = new Date();
-    const newImportTeamRow = ImportTeamRow.init({
+    const newImportTeamRow = TeamImportRow.init({
       raw: ['Team C', 'Institution C', 'open'],
       success: true,
-      parsedTeam: {
+      parsed: {
         reference: 'Team C',
         institution: 'Institution C',
         breakCategories: ['open'],
         speakers: [],
       },
-      matchedTeam: null,
+      matched: null,
       updateNecessity: {
         team: 'new',
       },
@@ -197,41 +205,48 @@ describe('Importer DB', () => {
       },
       doImport: true,
     });
-    const newImportSession = ImportSession.init({
+    const newTeamImportSession = TeamImportSession.init({
       ...importSession,
       updatedAt,
       rows: [newImportTeamRow],
     });
-    expectOkResult(await repository.save(newImportSession));
-    const retrievedImportSession = expectOkResult(
+    expectOkResult(await repository.save(newTeamImportSession));
+    const retrievedTeamImportSessions = expectOkResult(
       await repository.get({
         tournamentId: TournamentId.init('test_tournament'),
-        type: 'team',
+        importSessionId: importSession.id,
       }),
     );
-    expect(retrievedImportSession).toEqual(newImportSession);
+    expect(retrievedTeamImportSessions).toEqual(newTeamImportSession);
   });
 
   test('Saving import session when there is another session raises error', async () => {
     const importSession = generateTeamImportSession();
     expectOkResult(await repository.save(importSession));
-    const duplicateImportSession = ImportSession.init({
-      sessionId: ImportSessionId.init('different_session'),
+    const duplicateTeamImportSession = TeamImportSession.init({
+      id: TeamImportSessionId.init('different_session'),
       tournamentId: TournamentId.init('test_tournament'),
-      type: 'team',
       createdAt: new Date(),
       updatedAt: new Date(),
       headers: [],
+      missingInstitutions: ['Institution A'],
+      missingBreakCategories: ['esl'],
+      missingSpeakerCategories: [],
       origin: {
         type: 'google-sheets',
         id: 'test_google_sheet_id',
         tableId: 'test_table_id',
       },
       rows: [],
+      status: 'incomplete',
     });
     expectErrResult(
-      await repository.save(duplicateImportSession),
+      await repository.save(duplicateTeamImportSession),
       SaveFailedError,
     );
   });
+
+  test.todo(
+    'If session status is not incomplete, changing an import session status raises error',
+  );
 });

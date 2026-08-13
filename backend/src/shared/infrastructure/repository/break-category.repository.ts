@@ -98,6 +98,61 @@ export class BreakCategoryRepository extends BreakCategoryRepositoryPort {
     return ok();
   }
 
+  async saveMany(
+    breakCategories: BreakCategory[],
+  ): Promise<Result<void, SaveFailedError>> {
+    if (breakCategories.length === 0) {
+      return ok();
+    }
+    const saved = await this.db
+      .insertInto('breakCategory')
+      .values(
+        breakCategories.map(
+          ({
+            tournamentId,
+            id,
+            name,
+            slug,
+            seq,
+            breakSize,
+            reserveSize,
+            isGeneral,
+            priority,
+          }) => ({
+            tournamentId,
+            id,
+            name,
+            slug,
+            seq,
+            breakSize,
+            reserveSize,
+            isGeneral,
+            priority,
+          }),
+        ),
+      )
+      .onConflict((oc) =>
+        oc.columns(['tournamentId', 'id']).doUpdateSet({
+          name: (eb) => eb.ref('excluded.name'),
+          slug: (eb) => eb.ref('excluded.slug'),
+          seq: (eb) => eb.ref('excluded.seq'),
+          breakSize: (eb) => eb.ref('excluded.breakSize'),
+          reserveSize: (eb) => eb.ref('excluded.reserveSize'),
+          isGeneral: (eb) => eb.ref('excluded.isGeneral'),
+          priority: (eb) => eb.ref('excluded.priority'),
+        }),
+      )
+      .executeTakeFirst();
+    if (saved.numInsertedOrUpdatedRows !== BigInt(breakCategories.length)) {
+      return err(
+        new SaveFailedError(
+          `Failed to save break category(s) ${breakCategories.map((bc) => `(${bc.tournamentId}, ${bc.id})`).join(', ')}`,
+        ),
+      );
+    }
+    return ok();
+  }
+
   async delete(
     breakCategory: BreakCategory,
   ): Promise<Result<void, NotFoundError>> {
@@ -110,6 +165,34 @@ export class BreakCategoryRepository extends BreakCategoryRepositoryPort {
       return err(
         new NotFoundError(
           `Break category ${breakCategory.id} not found in tournament ${breakCategory.tournamentId}`,
+        ),
+      );
+    }
+    return ok();
+  }
+
+  async deleteMany(
+    breakCategories: BreakCategory[],
+  ): Promise<Result<void, NotFoundError>> {
+    if (breakCategories.length === 0) {
+      return ok();
+    }
+    const deleted = await this.db
+      .deleteFrom('breakCategory')
+      .where((eb) =>
+        eb.eb(
+          eb.refTuple('tournamentId', 'id'),
+          'in',
+          breakCategories.map((breakCategory) =>
+            eb.tuple(breakCategory.tournamentId, breakCategory.id),
+          ),
+        ),
+      )
+      .executeTakeFirst();
+    if (deleted.numDeletedRows !== BigInt(breakCategories.length)) {
+      return err(
+        new NotFoundError(
+          `Break category(s) ${breakCategories.map((bc) => `(${bc.tournamentId}, ${bc.id})`).join(', ')} not found`,
         ),
       );
     }

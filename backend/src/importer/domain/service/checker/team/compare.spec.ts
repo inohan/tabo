@@ -83,7 +83,7 @@ describe(getTeamUpdateNecessity, () => {
       ],
     };
     const matched: TeamMatchStatus = {
-      existing: teamDto,
+      existing: teamDto.id,
       matchedBy: {
         id: false,
         reference: true,
@@ -94,7 +94,7 @@ describe(getTeamUpdateNecessity, () => {
       },
       speakers: [
         {
-          existing: teamDto.speakers[0],
+          existing: teamDto.speakers[0]!.id,
           matchedBy: {
             id: false,
             name: true,
@@ -102,7 +102,7 @@ describe(getTeamUpdateNecessity, () => {
           },
         },
         {
-          existing: teamDto.speakers[1],
+          existing: teamDto.speakers[1]!.id,
           matchedBy: {
             id: false,
             name: true,
@@ -136,7 +136,7 @@ describe(getTeamUpdateNecessity, () => {
       ],
     };
     const matched: TeamMatchStatus = {
-      existing: teamDto,
+      existing: teamDto.id,
       matchedBy: {
         id: false,
         reference: true,
@@ -147,7 +147,7 @@ describe(getTeamUpdateNecessity, () => {
       },
       speakers: [
         {
-          existing: teamDto.speakers[0],
+          existing: teamDto.speakers[0]!.id,
           matchedBy: {
             id: false,
             name: true,
@@ -155,7 +155,7 @@ describe(getTeamUpdateNecessity, () => {
           },
         },
         {
-          existing: teamDto.speakers[1],
+          existing: teamDto.speakers[1]!.id,
           matchedBy: {
             id: false,
             name: true,

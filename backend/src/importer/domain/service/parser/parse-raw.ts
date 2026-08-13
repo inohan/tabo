@@ -13,17 +13,16 @@ const TableSchema = v.pipe(
     'Header and row have unequal number of columns.',
   ),
   v.rawTransform(({ dataset, addIssue, NEVER }) => {
-    const camelCaseHeaders = v.parse(
-      v.array(v.nullable(v.pipe(v.string(), v.toCamelCase()))),
-      dataset.value.headers.map((col) => (col !== '' ? col : null)),
-    );
     const headersWithCamelCase = dataset.value.headers.map(
       (header, index) =>
         [
           index,
           {
             raw: header,
-            processed: camelCaseHeaders[index],
+            processed: v.parse(
+              v.nullable(v.pipe(v.string(), v.toCamelCase())),
+              header !== '' ? header : null,
+            ),
           },
         ] as const,
     );
@@ -77,7 +76,7 @@ const TableSchema = v.pipe(
         )
         .map(([idx, { processed }]) => [
           processed,
-          dataset.value.row[idx] !== '' ? dataset.value.row[idx] : null,
+          dataset.value.row[idx] !== '' ? dataset.value.row[idx]! : null,
         ]),
     );
   }),

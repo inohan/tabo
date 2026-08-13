@@ -15,5 +15,11 @@ export abstract class SpeakerRepositoryPort {
     teamId: TeamId;
   }): Promise<Result<Speaker[], never>>;
   abstract save(speaker: Speaker): Promise<Result<void, SaveFailedError>>;
+  abstract saveMany(
+    speakers: Speaker[],
+  ): Promise<Result<void, SaveFailedError>>;
   abstract delete(speaker: Speaker): Promise<Result<void, NotFoundError>>;
+  abstract deleteMany(
+    speakers: Speaker[],
+  ): Promise<Result<void, NotFoundError>>;
 }

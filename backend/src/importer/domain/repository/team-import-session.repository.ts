@@ -1,22 +1,26 @@
 import { NotFoundError, SaveFailedError, TournamentId } from '@shared/domain';
 import { Result } from 'neverthrow';
-import { ImportSession } from '../models/import-session';
+import { TeamImportSession, TeamImportSessionId } from '../models';
 
-export abstract class ImportSessionRepositoryPort {
-  abstract get(id: {
+export abstract class TeamImportSessionRepositoryPort {
+  abstract get(input: {
     tournamentId: TournamentId;
-    type: 'team' | 'adjudicator';
-  }): Promise<Result<ImportSession, NotFoundError>>;
+    importSessionId: TeamImportSessionId;
+  }): Promise<Result<TeamImportSession, NotFoundError>>;
+
+  abstract getByTournament(id: {
+    tournamentId: TournamentId;
+  }): Promise<Result<TeamImportSession[], never>>;
 
   /**
    * Upserts a new import session. Fails if another import session with the same (tournamentId, type) exists.
    * @param importSession The import session to upsert.
    */
   abstract save(
-    importSession: ImportSession,
+    importSession: TeamImportSession,
   ): Promise<Result<void, SaveFailedError>>;
 
   abstract delete(
-    importSession: ImportSession,
+    importSession: TeamImportSession,
   ): Promise<Result<void, NotFoundError>>;
 }

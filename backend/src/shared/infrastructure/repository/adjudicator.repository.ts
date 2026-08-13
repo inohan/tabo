@@ -57,6 +57,7 @@ export class AdjudicatorRepository extends AdjudicatorRepositoryPort {
       tournamentId,
       id,
       name,
+      email,
       institutionId,
       breaking,
       independent,
@@ -71,6 +72,7 @@ export class AdjudicatorRepository extends AdjudicatorRepositoryPort {
         tournamentId,
         id,
         name,
+        email,
         institutionId,
         breaking,
         independent,
@@ -82,6 +84,7 @@ export class AdjudicatorRepository extends AdjudicatorRepositoryPort {
       .onConflict((oc) =>
         oc.columns(['tournamentId', 'id']).doUpdateSet({
           name,
+          email,
           institutionId,
           breaking,
           independent,
@@ -102,6 +105,67 @@ export class AdjudicatorRepository extends AdjudicatorRepositoryPort {
     return ok();
   }
 
+  async saveMany(
+    adjudicators: Adjudicator[],
+  ): Promise<Result<void, SaveFailedError>> {
+    if (adjudicators.length === 0) {
+      return ok();
+    }
+    const saved = await this.db
+      .insertInto('adjudicator')
+      .values(
+        adjudicators.map(
+          ({
+            tournamentId,
+            id,
+            name,
+            email,
+            institutionId,
+            breaking,
+            independent,
+            adjCore,
+            institutionConflicts,
+            teamConflicts,
+            adjudicatorConflicts,
+          }) => ({
+            tournamentId,
+            id,
+            name,
+            email,
+            institutionId,
+            breaking,
+            independent,
+            adjCore,
+            institutionConflicts,
+            teamConflicts,
+            adjudicatorConflicts,
+          }),
+        ),
+      )
+      .onConflict((oc) =>
+        oc.columns(['tournamentId', 'id']).doUpdateSet({
+          name: (eb) => eb.ref('excluded.name'),
+          email: (eb) => eb.ref('excluded.email'),
+          institutionId: (eb) => eb.ref('excluded.institutionId'),
+          breaking: (eb) => eb.ref('excluded.breaking'),
+          independent: (eb) => eb.ref('excluded.independent'),
+          adjCore: (eb) => eb.ref('excluded.adjCore'),
+          institutionConflicts: (eb) => eb.ref('excluded.institutionConflicts'),
+          teamConflicts: (eb) => eb.ref('excluded.teamConflicts'),
+          adjudicatorConflicts: (eb) => eb.ref('excluded.adjudicatorConflicts'),
+        }),
+      )
+      .executeTakeFirst();
+    if (saved.numInsertedOrUpdatedRows !== BigInt(adjudicators.length)) {
+      return err(
+        new SaveFailedError(
+          `Failed to save adjudicator(s) ${adjudicators.map((a) => `(${a.tournamentId}, ${a.id})`).join(', ')}`,
+        ),
+      );
+    }
+    return ok();
+  }
+
   async delete(adjudicator: Adjudicator): Promise<Result<void, NotFoundError>> {
     const result = await this.db
       .deleteFrom('adjudicator')
@@ -112,6 +176,34 @@ export class AdjudicatorRepository extends AdjudicatorRepositoryPort {
       return err(
         new NotFoundError(
           `Adjudicator ${adjudicator.id} not found in tournament ${adjudicator.tournamentId}`,
+        ),
+      );
+    }
+    return ok();
+  }
+
+  async deleteMany(
+    adjudicators: Adjudicator[],
+  ): Promise<Result<void, NotFoundError>> {
+    if (adjudicators.length === 0) {
+      return ok();
+    }
+    const deleted = await this.db
+      .deleteFrom('adjudicator')
+      .where((eb) =>
+        eb.eb(
+          eb.refTuple('tournamentId', 'id'),
+          'in',
+          adjudicators.map((adjudicator) =>
+            eb.tuple(adjudicator.tournamentId, adjudicator.id),
+          ),
+        ),
+      )
+      .executeTakeFirst();
+    if (deleted.numDeletedRows !== BigInt(adjudicators.length)) {
+      return err(
+        new NotFoundError(
+          `Adjudicator(s) ${adjudicators.map((a) => `(${a.tournamentId}, ${a.id})`).join(', ')} not found`,
         ),
       );
     }

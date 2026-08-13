@@ -13,7 +13,13 @@ export abstract class InstitutionRepositoryPort {
   abstract save(
     institution: Institution,
   ): Promise<Result<void, SaveFailedError>>;
+  abstract saveMany(
+    institutions: Institution[],
+  ): Promise<Result<void, SaveFailedError>>;
   abstract delete(
     institution: Institution,
-  ): Promise<Result<void, NotFoundError>>;
+  ): Promise<Result<void, SaveFailedError>>;
+  abstract deleteMany(
+    institutions: Institution[],
+  ): Promise<Result<void, SaveFailedError>>;
 }

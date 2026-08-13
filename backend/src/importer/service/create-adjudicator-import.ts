@@ -7,19 +7,27 @@ import {
   parseAdjudicatorImportRow,
   parseRawTable,
 } from '../domain/service/parser';
-import { ImportSession, ImportAdjudicatorRow } from '../domain/models';
-import { ImportSessionRepositoryPort } from '../domain/repository';
-import { throw_ } from 'src/lib/throw';
+import {
+  AdjudicatorImportSession,
+  AdjudicatorImportRow,
+} from '../domain/models';
+import { AdjudicatorImportSessionRepositoryPort } from '../domain/repository';
+import { throw_, throwUnexpected_ } from 'src/lib/throw';
 import {
   checkAdjudicator,
+  getMissingInstitutions,
   serializeAdjudicatorDuplicationStatus,
 } from '../domain/service/checker';
-import { AdjudicatorQuery } from '@shared/infrastructure/query';
+import {
+  AdjudicatorQuery,
+  InstitutionQuery,
+} from '@shared/infrastructure/query';
 
 export class CreateAdjudicatorImportSessionService {
   constructor(
-    private importSessionRepository: ImportSessionRepositoryPort,
+    private importSessionRepository: AdjudicatorImportSessionRepositoryPort,
     private adjudicatorQuery: AdjudicatorQuery,
+    private institutionQuery: InstitutionQuery,
   ) {}
   async execute({
     tournamentId,
@@ -36,6 +44,10 @@ export class CreateAdjudicatorImportSessionService {
       async function* (this: CreateAdjudicatorImportSessionService) {
         const existingAdjudicatorPromise =
           this.adjudicatorQuery.getByTournamentId({
+            tournamentId,
+          });
+        const existingInstitutionsPromise =
+          this.institutionQuery.getByTournamentId({
             tournamentId,
           });
         const readService = new ReadFileService(origin, {
@@ -55,56 +67,58 @@ export class CreateAdjudicatorImportSessionService {
           .map((result, index) => ({ result, index }))
           .filter(({ result }) => result.isOk())
           .map(({ index }) => index);
-        const reverseMapping = new Map(
-          indicesMapping
-            .entries()
-            .map(([filtered, original]) => [original, filtered]),
-        );
-        const checkResult = checkAdjudicator(
+        const checkResults = checkAdjudicator(
           validAdjudicatorImports,
           await existingAdjudicatorPromise,
         );
-
+        const necessaryInstitutions = [
+          ...checkResults
+            .map(({ adjudicatorImport }) => adjudicatorImport.institution)
+            .filter((institution) => institution !== null),
+        ];
+        const missingInstitutions = getMissingInstitutions(
+          necessaryInstitutions,
+          await existingInstitutionsPromise,
+        );
+        let filteredIndex = 0;
         const rows = parseRowResults.map((rowResult, originalIndex) =>
           rowResult.match(
             (adjudicatorImport) => {
-              const result =
-                checkResult[
-                  reverseMapping.get(originalIndex) ?? throw_(new Error())
-                ];
-              return ImportAdjudicatorRow.init({
-                raw: data.data[originalIndex],
+              const checkResult =
+                checkResults[filteredIndex++] ?? throwUnexpected_();
+              return AdjudicatorImportRow.init({
+                raw: data.data[originalIndex] ?? throwUnexpected_(),
                 success: true,
-                parsedAdjudicator: adjudicatorImport,
-                matchedAdjudicator:
-                  result.match.existing !== null
-                    ? AdjudicatorId.init(result.match.existing.id)
+                parsed: adjudicatorImport,
+                matched:
+                  checkResult.match.existing !== null
+                    ? AdjudicatorId.init(checkResult.match.existing)
                     : null,
-                updateNecessity: result.updateNecessity,
+                updateNecessity: checkResult.updateNecessity,
                 duplication: serializeAdjudicatorDuplicationStatus(
-                  result.duplicateStatus,
+                  checkResult.duplicateStatus,
                   indicesMapping,
                 ),
                 doImport:
-                  (result.updateNecessity.adjudicator === 'new' ||
-                    result.updateNecessity.adjudicator === 'update') &&
-                  !result.duplicateStatus.hasDuplicate,
+                  (checkResult.updateNecessity.adjudicator === 'new' ||
+                    checkResult.updateNecessity.adjudicator === 'update') &&
+                  !checkResult.duplicateStatus.hasDuplicate,
               });
             },
             (error) =>
-              ImportAdjudicatorRow.init({
-                raw: data.data[originalIndex],
+              AdjudicatorImportRow.init({
+                raw: data.data[originalIndex] ?? throwUnexpected_(),
                 success: false,
                 error: error.message,
               }),
           ),
         );
-        const importSession = ImportSession.create({
+        const importSession = AdjudicatorImportSession.create({
           tournamentId,
           origin,
           headers: data.headers,
-          type: 'adjudicator',
           rows,
+          missingInstitutions,
         });
         return await this.importSessionRepository.save(importSession);
       }.bind(this),

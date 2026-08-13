@@ -70,6 +70,41 @@ export class SpeakerCategoryRepository extends SpeakerCategoryRepositoryPort {
     return ok();
   }
 
+  async saveMany(
+    speakerCategories: SpeakerCategory[],
+  ): Promise<Result<void, SaveFailedError>> {
+    if (speakerCategories.length === 0) {
+      return ok();
+    }
+    const saved = await this.db
+      .insertInto('speakerCategory')
+      .values(
+        speakerCategories.map(({ tournamentId, id, name, slug, seq }) => ({
+          tournamentId,
+          id,
+          name,
+          slug,
+          seq,
+        })),
+      )
+      .onConflict((oc) =>
+        oc.columns(['tournamentId', 'id']).doUpdateSet({
+          name: (eb) => eb.ref('excluded.name'),
+          slug: (eb) => eb.ref('excluded.slug'),
+          seq: (eb) => eb.ref('excluded.seq'),
+        }),
+      )
+      .executeTakeFirst();
+    if (saved.numInsertedOrUpdatedRows !== BigInt(speakerCategories.length)) {
+      return err(
+        new SaveFailedError(
+          `Failed to save speaker category(s) ${speakerCategories.map((sc) => `(${sc.tournamentId}, ${sc.id})`).join(', ')}`,
+        ),
+      );
+    }
+    return ok();
+  }
+
   async delete(
     speakerCategory: SpeakerCategory,
   ): Promise<Result<void, NotFoundError>> {
@@ -82,6 +117,34 @@ export class SpeakerCategoryRepository extends SpeakerCategoryRepositoryPort {
       return err(
         new NotFoundError(
           `Speaker category ${speakerCategory.id} not found in tournament ${speakerCategory.tournamentId}`,
+        ),
+      );
+    }
+    return ok();
+  }
+
+  async deleteMany(
+    speakerCategories: SpeakerCategory[],
+  ): Promise<Result<void, NotFoundError>> {
+    if (speakerCategories.length === 0) {
+      return ok();
+    }
+    const deleted = await this.db
+      .deleteFrom('speakerCategory')
+      .where((eb) =>
+        eb.eb(
+          eb.refTuple('tournamentId', 'id'),
+          'in',
+          speakerCategories.map((speakerCategory) =>
+            eb.tuple(speakerCategory.tournamentId, speakerCategory.id),
+          ),
+        ),
+      )
+      .executeTakeFirst();
+    if (deleted.numDeletedRows !== BigInt(speakerCategories.length)) {
+      return err(
+        new NotFoundError(
+          `Speaker category(s) ${speakerCategories.map((sc) => `(${sc.tournamentId}, ${sc.id})`).join(', ')} not found`,
         ),
       );
     }

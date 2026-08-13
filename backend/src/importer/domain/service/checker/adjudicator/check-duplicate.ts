@@ -83,7 +83,7 @@ export const checkDuplicatesWithSameMatch = (
           index: number;
         } => input.value.existing !== null,
       ),
-    ({ value }) => value.existing.id,
+    ({ value }) => value.existing,
   );
   return [...groupedMatches.entries()].flatMap(([matchedId, group]) => {
     if (group.length < 2) {

@@ -1,11 +1,12 @@
 import { PickUnbranded } from 'src/lib/brand';
 import { ClientFactoryPort, AdjudicatorDTO } from '../clients/tabbycat';
-import { Adjudicator, TournamentId } from '../domain';
+import { Adjudicator, PartialFailedError, TournamentId } from '../domain';
 import {
   AdjudicatorRepositoryPort,
   TournamentRepositoryPort,
 } from '../domain/repository';
-import { safeTry, ok } from 'neverthrow';
+import { safeTry, ok, err } from 'neverthrow';
+import { throw_ } from 'src/lib/throw';
 
 export class CreateAdjudicatorService {
   constructor(
@@ -37,7 +38,7 @@ export class CreateAdjudicatorService {
         const adjudicatorDTO =
           yield* await tcClient.createAdjudicator(adjudicator);
         if (option?.sync ?? true) {
-          const syncResult = await this.sync(adjudicatorDTO, tournamentId);
+          const syncResult = await this.sync(tournamentId, adjudicatorDTO);
           if (option?.failOnSyncFail ?? false) {
             yield* syncResult;
           }
@@ -47,19 +48,79 @@ export class CreateAdjudicatorService {
     );
   }
 
-  private sync(adjudicatorDTO: AdjudicatorDTO, tournamentId: TournamentId) {
-    const adjudicatorEntity = Adjudicator.init({
-      tournamentId,
-      id: adjudicatorDTO.id,
-      name: adjudicatorDTO.name,
-      institutionId: adjudicatorDTO.institutionId,
-      breaking: adjudicatorDTO.breaking,
-      independent: adjudicatorDTO.independent,
-      adjCore: adjudicatorDTO.adjCore,
-      institutionConflicts: adjudicatorDTO.institutionConflicts,
-      teamConflicts: adjudicatorDTO.teamConflicts,
-      adjudicatorConflicts: adjudicatorDTO.adjudicatorConflicts,
-    });
-    return this.adjudicatorRepository.save(adjudicatorEntity);
+  executeMany(
+    tournamentId: TournamentId,
+    adjudicators: PickUnbranded<Adjudicator, 'name' | 'institutionId'>[],
+    option?: {
+      sync?: boolean;
+      failOnSyncFail?: boolean;
+    },
+  ) {
+    return safeTry(
+      async function* (this: CreateAdjudicatorService) {
+        const {
+          baseUrl,
+          token,
+          slug: tournamentSlug,
+        } = yield* await this.tournamentRepository.get(tournamentId);
+        const tcClient = this.tabbycatClientFactory({
+          baseUrl,
+          token,
+          tournamentSlug,
+        });
+        const adjudicatorDTOs = await Promise.all(
+          adjudicators.map((adjudicator) =>
+            tcClient.createAdjudicator(adjudicator),
+          ),
+        );
+        // Save only successful results
+        if (option?.sync ?? true) {
+          const syncResult = await this.syncMany(
+            tournamentId,
+            adjudicatorDTOs
+              .filter((result) => result.isOk())
+              .map((result) =>
+                result.match(
+                  (ok) => ok,
+                  () => throw_(new Error()),
+                ),
+              ),
+          );
+          if (option?.failOnSyncFail ?? false) {
+            yield* syncResult;
+          }
+        }
+
+        const results = adjudicatorDTOs.map((res) => res.map((dto) => dto.id));
+        if (results.every((res) => res.isOk())) {
+          return ok(
+            results.map((res) =>
+              res.match(
+                (ok) => ok,
+                () => throw_(new Error()),
+              ),
+            ),
+          );
+        }
+        return yield* err(new PartialFailedError(results));
+      }.bind(this),
+    );
+  }
+
+  private sync(tournamentId: TournamentId, adjudicatorDTO: AdjudicatorDTO) {
+    return this.adjudicatorRepository.save(
+      Adjudicator.fromDto(adjudicatorDTO, tournamentId),
+    );
+  }
+
+  private syncMany(
+    tournamentId: TournamentId,
+    adjudicatorDTOs: AdjudicatorDTO[],
+  ) {
+    return this.adjudicatorRepository.saveMany(
+      adjudicatorDTOs.map((adjudicatorDTO) =>
+        Adjudicator.fromDto(adjudicatorDTO, tournamentId),
+      ),
+    );
   }
 }

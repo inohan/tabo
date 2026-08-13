@@ -1,7 +1,7 @@
 import { Branded, Struct } from 'src/lib/brand';
 
-declare const tournamentSymbol: unique symbol;
-declare const tournamentIdSymbol: unique symbol;
+export declare const tournamentSymbol: unique symbol;
+export declare const tournamentIdSymbol: unique symbol;
 
 export type TournamentId = Branded<string, typeof tournamentIdSymbol>;
 

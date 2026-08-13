@@ -77,4 +77,20 @@ export class SpeakerCategoryQuery {
       .execute();
     return queryResults.map(toDto);
   }
+
+  async getMaxSeq({
+    tournamentId,
+  }: {
+    tournamentId: TournamentId;
+  }): Promise<number | null> {
+    const queryResult = await this.db
+      .selectFrom('speakerCategory')
+      .select((eb) => [eb.fn.max<number | null>('seq').as('maxSeq')])
+      .where('tournamentId', '=', tournamentId)
+      .executeTakeFirst();
+    if (queryResult === undefined) {
+      throw new Error(`Unexpected undefined.`);
+    }
+    return queryResult.maxSeq;
+  }
 }

@@ -47,32 +47,21 @@ export class SyncSpeakerCategoriesService {
               SpeakerCategory
             >(oldSpeakerCategories.map((sc) => [sc.id, sc]));
             // Delete nonexistent speaker categories from cache table
-            for (const sc of oldSpeakerCategories.filter(
-              (sc) => !syncedSpeakerCategoryIdSet.has(sc.id),
-            )) {
-              yield* await speakerCategoryRepository.delete(sc);
-            }
+            yield* await speakerCategoryRepository.deleteMany(
+              oldSpeakerCategories.filter(
+                (sc) => !syncedSpeakerCategoryIdSet.has(sc.id),
+              ),
+            );
             // Update/create new speaker categories
-            for (const dto of syncedSpeakerCategoryDtos) {
-              const foundSpeakerCategory = oldSpeakerCategoriesMap.get(dto.id);
-              if (foundSpeakerCategory !== undefined) {
-                const updateSpeakerCategory = SpeakerCategory.init({
-                  tournamentId: foundSpeakerCategory.tournamentId,
-                  ...dto,
-                });
-                yield* await speakerCategoryRepository.save(
-                  updateSpeakerCategory,
-                );
-              } else {
-                yield* await speakerCategoryRepository.save(
-                  SpeakerCategory.init({
-                    tournamentId: tournamentId,
-                    ...dto,
-                  }),
-                );
-              }
-            }
-            return ok();
+            return await speakerCategoryRepository.saveMany(
+              syncedSpeakerCategoryDtos.map((dto) =>
+                SpeakerCategory.fromDto(
+                  dto,
+                  tournamentId,
+                  oldSpeakerCategoriesMap.get(dto.id),
+                ),
+              ),
+            );
           }),
         );
         return ok();

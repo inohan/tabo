@@ -13,7 +13,13 @@ export abstract class BreakCategoryRepositoryPort {
   abstract save(
     breakCategory: BreakCategory,
   ): Promise<Result<void, SaveFailedError>>;
+  abstract saveMany(
+    breakCategories: BreakCategory[],
+  ): Promise<Result<void, SaveFailedError>>;
   abstract delete(
     breakCategory: BreakCategory,
+  ): Promise<Result<void, NotFoundError>>;
+  abstract deleteMany(
+    breakCategories: BreakCategory[],
   ): Promise<Result<void, NotFoundError>>;
 }

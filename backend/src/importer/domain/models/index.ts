@@ -1,2 +1,2 @@
-export * from './import-session';
-export * from './tournament';
+export * from './team-import-session';
+export * from './adjudicator-import-session';

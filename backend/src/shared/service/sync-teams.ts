@@ -10,7 +10,6 @@ import {
   TournamentId,
 } from '../domain';
 import { TournamentRepositoryPort, UnitOfWorkPort } from '../domain/repository';
-import { omit } from 'src/lib/omit';
 
 export class SyncTeamsService {
   constructor(
@@ -59,64 +58,41 @@ export class SyncTeamsService {
                 oldTeams.map((team) => [team.id, team]),
               );
               // Delete nonexistent teams from cache table
-              for (const team of oldTeams.filter(
-                (team) => !syncedTeamIdSet.has(team.id),
-              )) {
-                yield* await teamRepository.delete(team);
-              }
+              yield* await teamRepository.deleteMany(
+                oldTeams.filter((team) => !syncedTeamIdSet.has(team.id)),
+              );
               // Update/create new teams
-              for (const dto of syncedTeamDtos) {
-                const foundTeam = oldTeamsMap.get(dto.id);
-                if (foundTeam !== undefined) {
-                  const newTeam = Team.init({
-                    tournamentId: foundTeam.tournamentId,
-                    ...omit(dto, ['speakers'] as const),
-                    speakers: dto.speakers.map((spk) => spk.id),
-                  });
-                  yield* await teamRepository.save(newTeam);
-                } else {
-                  yield* await teamRepository.save(
-                    Team.init({
-                      tournamentId: tournamentId,
-                      ...omit(dto, ['speakers'] as const),
-                      speakers: dto.speakers.map((spk) => spk.id),
-                    }),
-                  );
-                }
-              }
+              yield* await teamRepository.saveMany(
+                syncedTeamDtos.map((dto) =>
+                  Team.fromDto(dto, tournamentId, oldTeamsMap.get(dto.id)),
+                ),
+              );
               // Sync speakers
               const oldSpeakers =
                 yield* await speakerRepository.getByTournament(tournamentId);
               const oldSpeakersMap = new Map<SpeakerId, Speaker>(
                 oldSpeakers.map((spk) => [spk.id, spk]),
               );
-              // Delete nonexistent teams from cache table
-              for (const speaker of oldSpeakers.filter(
-                (speaker) => !syncedSpeakerIdSet.has(speaker.id),
-              )) {
-                yield* await speakerRepository.delete(speaker);
-              }
-              // Update/create new teams
-              for (const dto of syncedSpeakerDtos) {
-                const foundSpeaker = oldSpeakersMap.get(dto.id);
-                if (foundSpeaker !== undefined) {
-                  const newSpeaker = Speaker.init({
-                    tournamentId: foundSpeaker.tournamentId,
-                    id: foundSpeaker.id,
-                    institutionId: foundSpeaker.institutionId,
-                    ...omit(dto, ['id', 'institutionId'] as const),
-                  });
-                  yield* await speakerRepository.save(newSpeaker);
-                } else {
-                  yield* await speakerRepository.save(
-                    Speaker.init({
-                      tournamentId: tournamentId,
-                      ...dto,
-                    }),
+              // Delete nonexistent speakers from cache table
+              yield* await speakerRepository.deleteMany(
+                oldSpeakers.filter(
+                  (speaker) => !syncedSpeakerIdSet.has(speaker.id),
+                ),
+              );
+              // Update/create new speakers
+              return await speakerRepository.saveMany(
+                syncedSpeakerDtos.map((dto) => {
+                  let spk = Speaker.fromDto(
+                    dto,
+                    tournamentId,
+                    oldSpeakersMap.get(dto.id),
                   );
-                }
-              }
-              return ok();
+                  if (dto.institutionId !== null) {
+                    spk = Speaker.replaceInstitution(spk, dto.institutionId);
+                  }
+                  return spk;
+                }),
+              );
             }),
         );
         return ok();

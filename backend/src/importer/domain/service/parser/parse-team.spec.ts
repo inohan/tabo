@@ -220,8 +220,8 @@ describe('Parsing team rows', () => {
         ],
       }),
     );
-    expect(ok.speakers[0].institution).toBe('Johto');
-    expect(ok.speakers[0].institution).toBe('Johto');
+    expect(ok.speakers[0]!.institution).toBe('Johto');
+    expect(ok.speakers[0]!.institution).toBe('Johto');
   });
 
   test('Speaker institution propagates to team institutions', () => {

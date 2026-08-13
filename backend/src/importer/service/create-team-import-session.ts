@@ -8,36 +8,70 @@ import {
   parseGroupedTeamImportRow,
   parseRawTable,
 } from '../domain/service/parser';
-import { ImportSession, ImportTeamRow } from '../domain/models';
-import { ImportSessionRepositoryPort } from '../domain/repository';
-import { throw_ } from 'src/lib/throw';
+import { TeamImportSession, TeamImportRow } from '../domain/models';
+import { TeamImportSessionRepositoryPort } from '../domain/repository';
+import { throw_, throwUnexpected_ } from 'src/lib/throw';
 import {
   checkTeam,
+  getMissingBreakCategories,
+  getMissingInstitutions,
+  getMissingSpeakerCategories,
   serializeTeamDuplicationStatus,
 } from '../domain/service/checker';
-import { TeamQuery } from '@shared/infrastructure/query';
+import {
+  BreakCategoryQuery,
+  InstitutionQuery,
+  SpeakerCategoryQuery,
+  TeamQuery,
+} from '@shared/infrastructure/query';
 
 export class CreateTeamImportSessionService {
   constructor(
-    private importSessionRepository: ImportSessionRepositoryPort,
+    private importSessionRepository: TeamImportSessionRepositoryPort,
     private teamQuery: TeamQuery,
+    private institutionQuery: InstitutionQuery,
+    private breakCategoryQuery: BreakCategoryQuery,
+    private speakerCategoryQuery: SpeakerCategoryQuery,
   ) {}
-  async execute({
-    tournamentId,
-    origin,
-    auth,
-    accessToken,
-  }: {
-    tournamentId: TournamentId;
-    origin: ImportOrigin;
-    auth?: OAuth2Client | GoogleAuth;
-    accessToken?: string;
-  }) {
+  async execute(
+    {
+      tournamentId,
+      origin,
+      auth,
+      accessToken,
+    }: {
+      tournamentId: TournamentId;
+      origin: ImportOrigin;
+      auth?: OAuth2Client | GoogleAuth;
+      accessToken?: string;
+    },
+    options?: {
+      /**
+       * Whether institutions for composite teams should be imported automatically.
+       * *Note that institutions in institutional teams and institutional conflicts will automatically get imported.
+       */
+      insertCompositeTeamInstitution?: boolean;
+    },
+  ) {
+    const insertCompositeTeamInstitution =
+      options?.insertCompositeTeamInstitution ?? false;
     return await safeTry(
       async function* (this: CreateTeamImportSessionService) {
-        const existingTeamPromise = this.teamQuery.getByTournamentId({
+        const existingTeamsPromise = this.teamQuery.getByTournamentId({
           tournamentId,
         });
+        const existingInstitutionsPromise =
+          this.institutionQuery.getByTournamentId({
+            tournamentId,
+          });
+        const existingBreakCategoryPromise =
+          this.breakCategoryQuery.getByTournamentId({
+            tournamentId,
+          });
+        const existingSpeakerCategoryPromise =
+          this.speakerCategoryQuery.getByTournamentId({
+            tournamentId,
+          });
         const readService = new ReadFileService(origin, {
           auth,
           accessToken,
@@ -57,56 +91,76 @@ export class CreateTeamImportSessionService {
           .map((result, index) => ({ result, index }))
           .filter(({ result }) => result.isOk())
           .map(({ index }) => index);
-        const reverseMapping = new Map(
-          indicesMapping
-            .entries()
-            .map(([filtered, original]) => [original, filtered]),
-        );
-        const checkResult = checkTeam(
+        const checkResults = checkTeam(
           validTeamImports,
-          await existingTeamPromise,
+          await existingTeamsPromise,
         );
-
+        const necessaryInstitutions = [
+          ...checkResults
+            .flatMap(({ teamImport }) => [
+              teamImport.institution,
+              ...(teamImport.institutionConflicts ?? []),
+              ...(insertCompositeTeamInstitution
+                ? teamImport.speakers.map((spk) => spk.institution)
+                : []),
+            ])
+            .filter((institution) => institution !== null),
+        ];
+        const missingInstitutions = getMissingInstitutions(
+          necessaryInstitutions,
+          await existingInstitutionsPromise,
+        );
+        const missingBreakCategories = getMissingBreakCategories(
+          checkResults.flatMap(({ teamImport }) => teamImport.breakCategories),
+          await existingBreakCategoryPromise,
+        );
+        const missingSpeakerCategories = getMissingSpeakerCategories(
+          checkResults.flatMap(({ teamImport }) =>
+            teamImport.speakers.flatMap((spk) => spk.categories),
+          ),
+          await existingSpeakerCategoryPromise,
+        );
+        let filteredIndex = 0;
         const rows = parseRowResults.map((rowResult, originalIndex) =>
           rowResult.match(
             (teamImport) => {
-              const result =
-                checkResult[
-                  reverseMapping.get(originalIndex) ?? throw_(new Error())
-                ];
-              return ImportTeamRow.init({
-                raw: data.data[originalIndex],
+              const checkResult =
+                checkResults[filteredIndex++] ?? throwUnexpected_();
+              return TeamImportRow.init({
+                raw: data.data[originalIndex] ?? throwUnexpected_(),
                 success: true,
-                parsedTeam: teamImport,
-                matchedTeam:
-                  result.match.existing !== null
-                    ? TeamId.init(result.match.existing.id)
+                parsed: teamImport,
+                matched:
+                  checkResult.match.existing !== null
+                    ? TeamId.init(checkResult.match.existing)
                     : null,
-                updateNecessity: result.updateNecessity,
+                updateNecessity: checkResult.updateNecessity,
                 duplication: serializeTeamDuplicationStatus(
-                  result.duplicateStatus,
+                  checkResult.duplicateStatus,
                   indicesMapping,
                 ),
                 doImport:
-                  (result.updateNecessity.team === 'new' ||
-                    result.updateNecessity.team === 'update') &&
-                  !result.duplicateStatus.hasDuplicate,
+                  (checkResult.updateNecessity.team === 'new' ||
+                    checkResult.updateNecessity.team === 'update') &&
+                  !checkResult.duplicateStatus.hasDuplicate,
               });
             },
             (error) =>
-              ImportTeamRow.init({
-                raw: data.data[originalIndex],
+              TeamImportRow.init({
+                raw: data.data[originalIndex] ?? throwUnexpected_(),
                 success: false,
                 error: error.message,
               }),
           ),
         );
-        const importSession = ImportSession.create({
+        const importSession = TeamImportSession.create({
           tournamentId,
           origin,
           headers: data.headers,
-          type: 'team',
           rows,
+          missingInstitutions,
+          missingBreakCategories,
+          missingSpeakerCategories,
         });
         return await this.importSessionRepository.save(importSession);
       }.bind(this),

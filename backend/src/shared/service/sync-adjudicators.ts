@@ -46,30 +46,21 @@ export class SyncAdjudicatorsService {
               ]),
             );
             // Delete nonexistent adjudicators from cache table
-            for (const adjudicator of oldAdjudicators.filter(
-              (adjudicator) => !syncedAdjudicatorIdSet.has(adjudicator.id),
-            )) {
-              yield* await adjudicatorRepository.delete(adjudicator);
-            }
+            yield* await adjudicatorRepository.deleteMany(
+              oldAdjudicators.filter(
+                (adjudicator) => !syncedAdjudicatorIdSet.has(adjudicator.id),
+              ),
+            );
             // Update/create new adjudicators
-            for (const dto of syncedAdjudicatorDtos) {
-              const foundAdjudicator = oldAdjudicatorsMap.get(dto.id);
-              if (foundAdjudicator !== undefined) {
-                const updatedAdjudicator = Adjudicator.init({
-                  tournamentId: foundAdjudicator.tournamentId,
-                  ...dto,
-                });
-                yield* await adjudicatorRepository.save(updatedAdjudicator);
-              } else {
-                yield* await adjudicatorRepository.save(
-                  Adjudicator.init({
-                    tournamentId: tournamentId,
-                    ...dto,
-                  }),
-                );
-              }
-            }
-            return ok();
+            return await adjudicatorRepository.saveMany(
+              syncedAdjudicatorDtos.map((dto) =>
+                Adjudicator.fromDto(
+                  dto,
+                  tournamentId,
+                  oldAdjudicatorsMap.get(dto.id),
+                ),
+              ),
+            );
           }),
         );
         return ok();

@@ -1,35 +1,46 @@
-import { TeamDto, TeamSpeakerDto } from '@shared/infrastructure/query';
+import { integerSchema } from 'src/lib/integer';
+import * as v from 'valibot';
 
-export type SpeakerMatchedBy = {
-  id: boolean;
-  name: boolean;
-  email: boolean;
-};
+export const SpeakerMatchedBy = v.object({
+  id: v.boolean(),
+  name: v.boolean(),
+  email: v.boolean(),
+});
 
-export type SpeakerMatchStatus<T extends TeamSpeakerDto = TeamSpeakerDto> =
-  | {
-      existing: null;
-    }
-  | {
-      existing: T;
-      matchedBy: SpeakerMatchedBy;
-    };
+export type SpeakerMatchedBy = v.InferOutput<typeof SpeakerMatchedBy>;
 
-export type TeamMatchedBy = {
-  id: boolean;
-  reference: boolean;
-  speakers: {
-    matched: number;
-    total: number;
-  };
-};
+const SpeakerMatchStatus = v.variant('existing', [
+  v.object({
+    existing: v.null(),
+  }),
+  v.object({
+    existing: integerSchema,
+    matchedBy: SpeakerMatchedBy,
+  }),
+]);
 
-export type TeamMatchStatus =
-  | {
-      existing: null;
-    }
-  | {
-      existing: TeamDto;
-      matchedBy: TeamMatchedBy;
-      speakers: SpeakerMatchStatus[];
-    };
+export type SpeakerMatchStatus = v.InferOutput<typeof SpeakerMatchStatus>;
+
+export const TeamMatchedBy = v.object({
+  id: v.boolean(),
+  reference: v.boolean(),
+  speakers: v.object({
+    matched: integerSchema,
+    total: integerSchema,
+  }),
+});
+
+export type TeamMatchedBy = v.InferOutput<typeof TeamMatchedBy>;
+
+export const TeamMatchStatus = v.variant('existing', [
+  v.object({
+    existing: v.null(),
+  }),
+  v.object({
+    existing: integerSchema,
+    matchedBy: TeamMatchedBy,
+    speakers: v.array(SpeakerMatchStatus),
+  }),
+]);
+
+export type TeamMatchStatus = v.InferOutput<typeof TeamMatchStatus>;

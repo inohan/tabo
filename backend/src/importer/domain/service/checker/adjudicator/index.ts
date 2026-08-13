@@ -3,6 +3,7 @@ import { AdjudicatorDto } from '@shared/infrastructure/query';
 import { matchAdjudicatorImportWithExistingAdjudicators } from './match';
 import { getAdjudicatorUpdateNecessity } from './compare';
 import { checkAdjudicatorDuplicates } from './check-duplicate';
+import { throwUnexpected_ } from 'src/lib/throw';
 
 export { serializeAdjudicatorDuplicationStatus } from './serialize-duplicate';
 
@@ -28,6 +29,6 @@ export const checkAdjudicator = (
   const duplicateStatuses = checkAdjudicatorDuplicates(calculatedRows);
   return calculatedRows.map((calculatedRow, index) => ({
     ...calculatedRow,
-    duplicateStatus: duplicateStatuses[index],
+    duplicateStatus: duplicateStatuses[index] ?? throwUnexpected_(),
   }));
 };

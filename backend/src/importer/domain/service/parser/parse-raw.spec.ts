@@ -8,7 +8,7 @@ describe('Import table parser', () => {
       data: [['1', '2']],
     });
     expect(results.length).toBe(1);
-    const err = expectErrResult(results[0]);
+    const err = expectErrResult(results[0]!);
     expect(err.message).toContain('unequal number');
   });
 
@@ -18,7 +18,7 @@ describe('Import table parser', () => {
       data: [['1', '2', '3']],
     });
     expect(results.length).toBe(1);
-    const err = expectErrResult(results[0]);
+    const err = expectErrResult(results[0]!);
     expect(Object.keys(err.cause.nested!).sort()).toEqual(
       ['headers.0', 'headers.2'].sort(),
     );
@@ -30,7 +30,7 @@ describe('Import table parser', () => {
       data: [['1', '2', '3']],
     });
     expect(results.length).toBe(1);
-    const ok = expectOkResult(results[0]);
+    const ok = expectOkResult(results[0]!);
     expect(ok).toStrictEqual({ a: '1', b: '2' });
   });
 
@@ -40,14 +40,14 @@ describe('Import table parser', () => {
       data: [['1', '2', '3', '4', '5']],
     });
     expect(results.length).toBe(1);
-    const ok = expectOkResult(results[0]);
+    const ok = expectOkResult(results[0]!);
     expect(ok).toStrictEqual({ a: '1', b: '2', c: '5' });
   });
 
   test('empty cells become null instead of empty string', () => {
     const results = parseRawTable({ headers: ['a', 'b'], data: [['1', '']] });
     expect(results.length).toBe(1);
-    const ok = expectOkResult(results[0]);
+    const ok = expectOkResult(results[0]!);
     expect(ok).toStrictEqual({ a: '1', b: null });
   });
 
@@ -73,7 +73,7 @@ describe('Import table parser', () => {
       ],
     });
     expect(results.length).toBe(1);
-    const ok = expectOkResult(results[0]);
+    const ok = expectOkResult(results[0]!);
     expect(ok).toStrictEqual({
       camelCase: 'camelCase',
       snakeCase: 'snakeCase',
@@ -90,7 +90,7 @@ describe('Import table parser', () => {
       data: [['1', '2']],
     });
     expect(results.length).toBe(1);
-    const err = expectErrResult(results[0]);
+    const err = expectErrResult(results[0]!);
     expect(Object.keys(err.cause.nested!).sort()).toEqual(
       ['headers.0', 'headers.1'].sort(),
     );

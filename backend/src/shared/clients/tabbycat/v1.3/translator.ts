@@ -141,6 +141,7 @@ const AdjudicatorSchema = v.pipe(
   v.object({
     id: v.pipe(v.number(), v.transform(AdjudicatorId.init)),
     name: v.string(),
+    email: v.nullable(v.string()),
     institution: v.union([
       v.pipe(v.string(), v.transform(UrlDeserializer.institutionId)),
       v.null(),
@@ -162,6 +163,7 @@ const AdjudicatorSchema = v.pipe(
     ({
       id,
       name,
+      email,
       institution,
       institutionConflicts,
       teamConflicts,
@@ -172,6 +174,7 @@ const AdjudicatorSchema = v.pipe(
     }) => ({
       id,
       name,
+      email,
       institutionId: institution,
       institutionConflicts,
       teamConflicts,

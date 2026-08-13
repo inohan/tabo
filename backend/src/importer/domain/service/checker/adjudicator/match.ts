@@ -42,7 +42,7 @@ export const matchAdjudicatorImportWithExistingAdjudicators = (
         const matchedAdjudicator =
           matchResult.byId ?? matchResult.byName ?? matchResult.byEmail!;
         return {
-          existing: matchedAdjudicator,
+          existing: matchedAdjudicator.id,
           matchedBy: {
             id: matchResult.byId?.id === matchedAdjudicator.id,
             name: matchResult.byName?.id === matchedAdjudicator.id,

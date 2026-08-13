@@ -3,7 +3,9 @@ import { Err, Ok, Result } from 'neverthrow';
 // `Matchers` is declared in @vitest/expect and only re-exported by `vitest`,
 // so augmenting 'vitest' would create a second interface instead of merging.
 declare module '@vitest/expect' {
-  interface Matchers<T = unknown> {
+  // The default must stay `any` to match the upstream declaration —
+  // interface merging requires identical type parameter lists.
+  interface Matchers<T = any> {
     toBeOkResult(): T;
     toBeErrResult(): T;
   }

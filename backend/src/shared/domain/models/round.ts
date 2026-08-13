@@ -2,8 +2,8 @@ import { Branded, Struct } from 'src/lib/brand';
 import { TournamentId } from './tournament';
 import { BreakCategoryId } from './break-category';
 import { Enum } from 'src/lib/enum';
-declare const roundSymbol: unique symbol;
-declare const roundIdSymbol: unique symbol;
+export declare const roundSymbol: unique symbol;
+export declare const roundIdSymbol: unique symbol;
 
 export type RoundId = Branded<number, typeof roundIdSymbol>;
 
@@ -12,7 +12,7 @@ const roundStage = [
   { type: 'E', name: 'Elimination' },
 ] as const;
 
-declare const roundStageSymbol: unique symbol;
+export declare const roundStageSymbol: unique symbol;
 
 export const RoundStage = Enum<typeof roundStage, typeof roundStageSymbol>(
   roundStage,
@@ -28,7 +28,7 @@ const roundDrawType = [
   { type: 'S', name: 'Seeded' },
 ] as const;
 
-declare const roundDrawTypeSymbol: unique symbol;
+export declare const roundDrawTypeSymbol: unique symbol;
 
 export const RoundDrawType = Enum<
   typeof roundDrawType,
@@ -47,7 +47,7 @@ const roundDrawStatus = [
   { type: 'R', name: 'Released' },
 ] as const;
 
-declare const roundDrawStatusSymbol: unique symbol;
+export declare const roundDrawStatusSymbol: unique symbol;
 
 export const RoundDrawStatus = Enum<
   typeof roundDrawStatus,
@@ -64,7 +64,7 @@ const roundMotionsStatus = [
   { type: 'M', name: 'MotionsReleased' },
 ] as const;
 
-declare const roundMotionsStatusSymbol: unique symbol;
+export declare const roundMotionsStatusSymbol: unique symbol;
 
 export const RoundMotionsStatus = Enum<
   typeof roundMotionsStatus,

@@ -47,30 +47,21 @@ export class SyncBreakCategoriesService {
               BreakCategory
             >(oldBreakCategories.map((bc) => [bc.id, bc]));
             // Delete nonexistent break categories from cache table
-            for (const bc of oldBreakCategories.filter(
-              (bc) => !syncedBreakCategoryIdSet.has(bc.id),
-            )) {
-              yield* await breakCategoryRepository.delete(bc);
-            }
+            yield* await breakCategoryRepository.deleteMany(
+              oldBreakCategories.filter(
+                (bc) => !syncedBreakCategoryIdSet.has(bc.id),
+              ),
+            );
             // Update/create new break categories
-            for (const dto of syncedBreakCategoryDtos) {
-              const foundBreakCategory = oldBreakCategoriesMap.get(dto.id);
-              if (foundBreakCategory !== undefined) {
-                const updatedBreakCategory = BreakCategory.init({
-                  tournamentId: foundBreakCategory.tournamentId,
-                  ...dto,
-                });
-                yield* await breakCategoryRepository.save(updatedBreakCategory);
-              } else {
-                yield* await breakCategoryRepository.save(
-                  BreakCategory.init({
-                    tournamentId: tournamentId,
-                    ...dto,
-                  }),
-                );
-              }
-            }
-            return ok();
+            return await breakCategoryRepository.saveMany(
+              syncedBreakCategoryDtos.map((dto) =>
+                BreakCategory.fromDto(
+                  dto,
+                  tournamentId,
+                  oldBreakCategoriesMap.get(dto.id),
+                ),
+              ),
+            );
           }),
         );
         return ok();

@@ -58,14 +58,11 @@ export class InstitutionRepository extends InstitutionRepositoryPort {
         id,
         name,
         code,
-        createdAt: new Date(),
-        updatedAt: null,
       })
       .onConflict((oc) =>
         oc.columns(['tournamentId', 'id']).doUpdateSet({
           name,
           code,
-          updatedAt: new Date(),
         }),
       )
       .executeTakeFirst();
@@ -79,7 +76,42 @@ export class InstitutionRepository extends InstitutionRepositoryPort {
     return ok();
   }
 
-  async delete(institution: Institution): Promise<Result<void, NotFoundError>> {
+  async saveMany(
+    institutions: Institution[],
+  ): Promise<Result<void, SaveFailedError>> {
+    if (institutions.length === 0) {
+      return ok();
+    }
+    const saved = await this.db
+      .insertInto('institution')
+      .values(
+        institutions.map(({ tournamentId, id, name, code }) => ({
+          tournamentId,
+          id,
+          name,
+          code,
+        })),
+      )
+      .onConflict((oc) =>
+        oc.columns(['tournamentId', 'id']).doUpdateSet({
+          name: (eb) => eb.ref('excluded.name'),
+          code: (eb) => eb.ref('excluded.code'),
+        }),
+      )
+      .executeTakeFirst();
+    if (saved.numInsertedOrUpdatedRows !== BigInt(institutions.length)) {
+      return err(
+        new SaveFailedError(
+          `Failed to save institution(s) ${institutions.map((i) => `(${i.tournamentId}, ${i.id})`).join(', ')}`,
+        ),
+      );
+    }
+    return ok();
+  }
+
+  async delete(
+    institution: Institution,
+  ): Promise<Result<void, SaveFailedError>> {
     const deleted = await this.db
       .deleteFrom('institution')
       .where('tournamentId', '=', institution.tournamentId)
@@ -87,8 +119,36 @@ export class InstitutionRepository extends InstitutionRepositoryPort {
       .executeTakeFirst();
     if (deleted.numDeletedRows === 0n) {
       return err(
-        new NotFoundError(
+        new SaveFailedError(
           `Institution ${institution.id} not found in tournament ${institution.tournamentId}`,
+        ),
+      );
+    }
+    return ok();
+  }
+
+  async deleteMany(
+    institutions: Institution[],
+  ): Promise<Result<void, SaveFailedError>> {
+    if (institutions.length === 0) {
+      return ok();
+    }
+    const deleted = await this.db
+      .deleteFrom('institution')
+      .where((eb) =>
+        eb.eb(
+          eb.refTuple('tournamentId', 'id'),
+          'in',
+          institutions.map((institution) =>
+            eb.tuple(institution.tournamentId, institution.id),
+          ),
+        ),
+      )
+      .executeTakeFirst();
+    if (deleted.numDeletedRows !== BigInt(institutions.length)) {
+      return err(
+        new SaveFailedError(
+          `Institution(s) ${institutions.map((i) => `(${i.tournamentId}, ${i.id})`).join(', ')} not found`,
         ),
       );
     }

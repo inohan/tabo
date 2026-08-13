@@ -33,8 +33,6 @@ export const institutionTable = sharedSchema.table(
     id: integer().notNull(),
     name: varchar().notNull(),
     code: varchar().notNull(),
-    createdAt: timestamp().notNull(),
-    updatedAt: timestamp(),
   },
   (table) => [primaryKey({ columns: [table.tournamentId, table.id] })],
 );

@@ -1,11 +1,12 @@
 import { PickUnbranded } from 'src/lib/brand';
 import { ClientFactoryPort, InstitutionDTO } from '../clients/tabbycat';
-import { Institution, TournamentId } from '../domain';
+import { Institution, PartialFailedError, TournamentId } from '../domain';
 import {
   InstitutionRepositoryPort,
   TournamentRepositoryPort,
 } from '../domain/repository';
-import { safeTry, ok } from 'neverthrow';
+import { safeTry, ok, err } from 'neverthrow';
+import { throw_ } from 'src/lib/throw';
 
 export class CreateInstitutionService {
   constructor(
@@ -18,7 +19,13 @@ export class CreateInstitutionService {
     tournamentId: TournamentId,
     institution: PickUnbranded<Institution, 'name' | 'code'>,
     option?: {
+      /**
+       * Whether to sync database on creation. Defaults to `true`
+       */
       sync?: boolean;
+      /**
+       * If `sync` is `true`, whether to fail (raise SaveFailed) when the sync fails. Defaults to `false`.
+       */
       failOnSyncFail?: boolean;
     },
   ) {
@@ -37,7 +44,7 @@ export class CreateInstitutionService {
         const institutionDTO =
           yield* await tcClient.createInstitution(institution);
         if (option?.sync ?? true) {
-          const syncResult = await this.sync(institutionDTO, tournamentId);
+          const syncResult = await this.sync(tournamentId, institutionDTO);
           if (option?.failOnSyncFail ?? false) {
             yield* syncResult;
           }
@@ -48,7 +55,72 @@ export class CreateInstitutionService {
     );
   }
 
-  private sync(institutionDTO: InstitutionDTO, tournamentId: TournamentId) {
+  executeMany(
+    tournamentId: TournamentId,
+    institutions: PickUnbranded<Institution, 'name' | 'code'>[],
+    option?: {
+      /**
+       * Whether to sync database on creation. Defaults to `true`
+       */
+      sync?: boolean;
+      /**
+       * If `sync` is `true`, whether to fail (raise SaveFailed) when the sync fails. Defaults to `false`.
+       */
+      failOnSyncFail?: boolean;
+    },
+  ) {
+    return safeTry(
+      async function* (this: CreateInstitutionService) {
+        const {
+          baseUrl,
+          token,
+          slug: tournamentSlug,
+        } = yield* await this.tournamentRepository.get(tournamentId);
+        const tcClient = this.tabbycatClientFactory({
+          baseUrl,
+          token,
+          tournamentSlug,
+        });
+        const institutionDTOs = await Promise.all(
+          institutions.map((institution) =>
+            tcClient.createInstitution(institution),
+          ),
+        );
+        // Save only successful results
+        if (option?.sync ?? true) {
+          const syncResult = await this.syncMany(
+            tournamentId,
+            institutionDTOs
+              .filter((result) => result.isOk())
+              .map((result) =>
+                result.match(
+                  (ok) => ok,
+                  () => throw_(new Error()),
+                ),
+              ),
+          );
+          if (option?.failOnSyncFail ?? false) {
+            yield* syncResult;
+          }
+        }
+
+        const results = institutionDTOs.map((res) => res.map((dto) => dto.id));
+        if (results.every((res) => res.isOk())) {
+          return ok(
+            results.map((res) =>
+              res.match(
+                (ok) => ok,
+                () => throw_(new Error()),
+              ),
+            ),
+          );
+        }
+        return yield* err(new PartialFailedError(results));
+      }.bind(this),
+    );
+  }
+
+  private sync(tournamentId: TournamentId, institutionDTO: InstitutionDTO) {
     const institutionEntity = Institution.init({
       tournamentId,
       id: institutionDTO.id,
@@ -56,5 +128,20 @@ export class CreateInstitutionService {
       name: institutionDTO.name,
     });
     return this.institutionRepository.save(institutionEntity);
+  }
+
+  private syncMany(
+    tournamentId: TournamentId,
+    institutionDTOs: InstitutionDTO[],
+  ) {
+    const institutionEntities = institutionDTOs.map((institutionDTO) =>
+      Institution.init({
+        tournamentId,
+        id: institutionDTO.id,
+        code: institutionDTO.code,
+        name: institutionDTO.name,
+      }),
+    );
+    return this.institutionRepository.saveMany(institutionEntities);
   }
 }

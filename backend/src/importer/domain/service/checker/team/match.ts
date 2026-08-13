@@ -3,6 +3,7 @@ import {
   SpeakerMatchStatus,
   TeamMatchStatus,
   SpeakerImport,
+  SpeakerMatchedBy,
 } from '@importer/domain/values';
 import {
   SpeakerDto,
@@ -16,7 +17,7 @@ export const matchSpeakerImportWithExistingSpeakers = <
 >(
   speakerImport: SpeakerImport,
   existing: T[],
-): SpeakerMatchStatus<T> => {
+) => {
   // Workaround for match().with() not properly functioning with a generic type T
   const matchResult = {
     byId:
@@ -36,6 +37,9 @@ export const matchSpeakerImportWithExistingSpeakers = <
   };
   return (
     match(matchResult)
+      .returnType<
+        { existing: null } | { existing: T; matchedBy: SpeakerMatchedBy }
+      >()
       // If an id is provided but cannot be found, skip any other checks
       .with({ byId: null }, () => ({
         existing: null,
@@ -107,31 +111,35 @@ export const matchTeamImportWithExistingTeams = (
       (matchResult) => {
         const matchedTeam = matchResult.byId ?? matchResult.byReference!;
         // matchAllSpeakersResult matches against all speakers, including from different teams. This filters out the match against the matched team.
-        const speakersMatched = matchAllSpeakersResult.map((speakerMatch) => {
-          if (
-            speakerMatch.existing !== null &&
-            speakerMatch.existing.team === matchedTeam.id
-          ) {
-            return speakerMatch;
-          } else {
-            return {
-              existing: null,
-            };
-          }
-        });
+        const speakersWithinTeamMatched = teamImport.speakers.map(
+          (speakerImport) =>
+            matchSpeakerImportWithExistingSpeakers(
+              speakerImport,
+              matchedTeam.speakers,
+            ),
+        );
         return {
-          existing: matchedTeam,
+          existing: matchedTeam.id,
           matchedBy: {
             id: matchResult.byId?.id === matchedTeam.id,
             reference: matchResult.byReference?.id === matchedTeam.id,
             speakers: {
-              matched: speakersMatched.filter(
+              matched: speakersWithinTeamMatched.filter(
                 (speakerMatched) => speakerMatched.existing !== null,
               ).length,
               total: teamImport.speakers.length,
             },
           },
-          speakers: speakersMatched,
+          speakers: speakersWithinTeamMatched.map((status) =>
+            match(status)
+              .returnType<SpeakerMatchStatus>()
+              .with({ existing: P.nonNullable }, ({ existing, matchedBy }) => ({
+                existing: existing.id,
+                matchedBy,
+              }))
+              .with({ existing: null }, ({ existing }) => ({ existing }))
+              .exhaustive(),
+          ),
         };
       },
     )

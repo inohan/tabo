@@ -1,6 +1,7 @@
-import { Db } from '../persistence/db';
+import { Db, DbSchema } from '../persistence/db';
 import { TeamId, TournamentId } from '../../domain';
 import { jsonArrayFrom } from 'kysely/helpers/postgres';
+import { Selectable } from 'kysely';
 
 export type TeamSpeakerDto = {
   id: number;
@@ -29,42 +30,8 @@ export type TeamDto = {
   longName: string;
 };
 
-// Used only for typing
-const selector = (db: Db) =>
-  db
-    .selectFrom('team')
-    .select((eb) => [
-      'tournamentId',
-      'id',
-      'reference',
-      'shortReference',
-      'institutionId',
-      'institutionConflicts',
-      'breakCategories',
-      'emoji',
-      'codeName',
-      'useInstitutionPrefix',
-      'shortName',
-      'longName',
-      jsonArrayFrom(
-        eb
-          .selectFrom('speaker')
-          .select([
-            'speaker.id',
-            'speaker.name',
-            'speaker.institutionId',
-            'speaker.categories',
-            'speaker.anonymous',
-            'speaker.email',
-          ])
-          .whereRef('speaker.teamId', '=', 'team.id')
-          .orderBy('speaker.id'),
-      ).as('speakers'),
-    ])
-    .executeTakeFirstOrThrow();
-
 const toTeamSpeakerDto = (
-  result: Awaited<ReturnType<typeof selector>>['speakers'][number],
+  result: Selectable<DbSchema['speaker']>,
 ): TeamSpeakerDto => ({
   id: result.id,
   name: result.name,
@@ -75,7 +42,11 @@ const toTeamSpeakerDto = (
   institution: result.institutionId,
 });
 
-const toDto = (result: Awaited<ReturnType<typeof selector>>): TeamDto => ({
+const toDto = (
+  result: Selectable<DbSchema['team']> & {
+    speakers: Selectable<DbSchema['speaker']>[];
+  },
+): TeamDto => ({
   tournamentId: result.tournamentId,
 
   id: result.id,
@@ -120,14 +91,8 @@ export class TeamQuery {
         jsonArrayFrom(
           eb
             .selectFrom('speaker')
-            .select([
-              'speaker.id',
-              'speaker.name',
-              'speaker.institutionId',
-              'speaker.categories',
-              'speaker.anonymous',
-              'speaker.email',
-            ])
+            .selectAll()
+            .whereRef('speaker.tournamentId', '=', 'team.tournamentId')
             .whereRef('speaker.teamId', '=', 'team.id')
             .orderBy('speaker.id'),
         ).as('speakers'),
@@ -169,14 +134,8 @@ export class TeamQuery {
         jsonArrayFrom(
           eb
             .selectFrom('speaker')
-            .select([
-              'speaker.id',
-              'speaker.name',
-              'speaker.institutionId',
-              'speaker.categories',
-              'speaker.anonymous',
-              'speaker.email',
-            ])
+            .selectAll()
+            .whereRef('speaker.tournamentId', '=', 'team.tournamentId')
             .whereRef('speaker.teamId', '=', 'team.id')
             .orderBy('speaker.id'),
         ).as('speakers'),
@@ -211,14 +170,8 @@ export class TeamQuery {
         jsonArrayFrom(
           eb
             .selectFrom('speaker')
-            .select([
-              'speaker.id',
-              'speaker.name',
-              'speaker.institutionId',
-              'speaker.categories',
-              'speaker.anonymous',
-              'speaker.email',
-            ])
+            .selectAll()
+            .whereRef('speaker.tournamentId', '=', 'team.tournamentId')
             .whereRef('speaker.teamId', '=', 'team.id')
             .orderBy('speaker.id'),
         ).as('speakers'),

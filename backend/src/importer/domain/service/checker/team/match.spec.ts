@@ -378,7 +378,7 @@ describe(matchTeamImportWithExistingTeams, () => {
     const matched = matchTeamImportWithExistingTeams(teamImport, existingTeams);
     expect(matched.existing).not.toBe(null);
     if (matched.existing !== null) {
-      expect(matched.existing.id).toBe(1);
+      expect(matched.existing).toBe(1);
       expect(matched.matchedBy.id).toBe(true);
     }
   });
@@ -406,7 +406,7 @@ describe(matchTeamImportWithExistingTeams, () => {
     const matched = matchTeamImportWithExistingTeams(teamImport, existingTeams);
     expect(matched.existing).not.toBe(null);
     if (matched.existing !== null) {
-      expect(matched.existing.id).toBe(1);
+      expect(matched.existing).toBe(1);
       expect(matched.matchedBy.reference).toBe(true);
     }
   });
@@ -434,7 +434,7 @@ describe(matchTeamImportWithExistingTeams, () => {
     const matched = matchTeamImportWithExistingTeams(teamImport, existingTeams);
     expect(matched.existing).not.toBe(null);
     if (matched.existing !== null) {
-      expect(matched.existing.id).toBe(1);
+      expect(matched.existing).toBe(1);
       expect(matched.matchedBy.reference).toBe(true);
     }
   });
@@ -463,7 +463,7 @@ describe(matchTeamImportWithExistingTeams, () => {
     const matched = matchTeamImportWithExistingTeams(teamImport, existingTeams);
     expect(matched.existing).not.toBe(null);
     if (matched.existing !== null) {
-      expect(matched.existing.id).toBe(1);
+      expect(matched.existing).toBe(1);
       expect(matched.matchedBy.id).toBe(true);
       expect(matched.matchedBy.reference).toBe(false);
     }
@@ -494,11 +494,11 @@ describe(matchTeamImportWithExistingTeams, () => {
     );
     expect(matchedTokyo.existing).not.toBe(null);
     if (matchedTokyo.existing !== null) {
-      expect(matchedTokyo.existing.id).toBe(4);
+      expect(matchedTokyo.existing).toBe(4);
     }
     expect(matchedKyoto.existing).not.toBe(null);
     if (matchedKyoto.existing !== null) {
-      expect(matchedKyoto.existing.id).toBe(5);
+      expect(matchedKyoto.existing).toBe(5);
     }
   });
 });

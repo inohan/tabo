@@ -13,7 +13,13 @@ export abstract class SpeakerCategoryRepositoryPort {
   abstract save(
     speakerCategory: SpeakerCategory,
   ): Promise<Result<void, SaveFailedError>>;
+  abstract saveMany(
+    speakerCategories: SpeakerCategory[],
+  ): Promise<Result<void, SaveFailedError>>;
   abstract delete(
     speakerCategory: SpeakerCategory,
+  ): Promise<Result<void, NotFoundError>>;
+  abstract deleteMany(
+    speakerCategories: SpeakerCategory[],
   ): Promise<Result<void, NotFoundError>>;
 }

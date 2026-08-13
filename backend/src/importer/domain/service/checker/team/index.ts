@@ -3,8 +3,13 @@ import { TeamDto } from '@shared/infrastructure/query';
 import { matchTeamImportWithExistingTeams } from './match';
 import { getTeamUpdateNecessity } from './compare';
 import { checkTeamDuplicates } from './check-duplicate';
+import { throwUnexpected_ } from 'src/lib/throw';
 
 export { serializeTeamDuplicationStatus } from './serialize-duplicate';
+export {
+  getMissingBreakCategories,
+  getMissingSpeakerCategories,
+} from './missing-categories';
 export const checkTeam = (
   teamImports: TeamImport[],
   existingTeams: TeamDto[],
@@ -21,6 +26,6 @@ export const checkTeam = (
   const duplicateStatuses = checkTeamDuplicates(calculatedRows);
   return calculatedRows.map((calculatedRow, index) => ({
     ...calculatedRow,
-    duplicateStatus: duplicateStatuses[index],
+    duplicateStatus: duplicateStatuses[index] ?? throwUnexpected_(),
   }));
 };

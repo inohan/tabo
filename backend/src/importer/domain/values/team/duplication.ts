@@ -1,29 +1,43 @@
-export type TeamDuplicationReason =
-  | {
-      type: 'sameReference';
-      reference: string;
-      indices: number[];
-    }
-  | {
-      type: 'sameMatch';
-      teamId: number;
-      indices: number[];
-    };
+import { integerSchema } from 'src/lib/integer';
+import * as v from 'valibot';
 
-export type TeamDuplicationStatus =
-  | {
-      hasDuplicate: false;
-    }
-  | {
-      hasDuplicate: true;
-      reasons: TeamDuplicationReason[];
-    };
+export const TeamDuplicationReason = v.variant('type', [
+  v.object({
+    type: v.literal('sameReference'),
+    reference: v.string(),
+    indices: v.array(integerSchema),
+  }),
+  v.object({
+    type: v.literal('sameMatch'),
+    teamId: integerSchema,
+    indices: v.array(integerSchema),
+  }),
+]);
 
-export type SerializedTeamDuplicationStatus =
-  | {
-      hasDuplicate: false;
-    }
-  | {
-      hasDuplicate: true;
-      reasons: string[];
-    };
+export type TeamDuplicationReason = v.InferOutput<typeof TeamDuplicationReason>;
+
+export const TeamDuplicationStatus = v.variant('hasDuplicate', [
+  v.object({
+    hasDuplicate: v.literal(false),
+  }),
+  v.object({
+    hasDuplicate: v.literal(true),
+    reasons: v.array(TeamDuplicationReason),
+  }),
+]);
+
+export type TeamDuplicationStatus = v.InferOutput<typeof TeamDuplicationStatus>;
+
+export const SerializedTeamDuplicationStatus = v.variant('hasDuplicate', [
+  v.object({
+    hasDuplicate: v.literal(false),
+  }),
+  v.object({
+    hasDuplicate: v.literal(true),
+    reasons: v.array(v.string()),
+  }),
+]);
+
+export type SerializedTeamDuplicationStatus = v.InferOutput<
+  typeof SerializedTeamDuplicationStatus
+>;

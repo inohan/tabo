@@ -22,7 +22,7 @@ describe('Integration test', () => {
     );
     expect(debatersSheet).not.toBe(undefined);
     expect(debatersSheet?.tables.length).toBe(1);
-    const debaterTable = debatersSheet!.tables[0];
+    const debaterTable = debatersSheet!.tables[0]!;
     expect(debaterTable.name).toBe(TABLE_NAME);
     expect(debaterTable.columnProperties.length).toBe(13);
     expect(

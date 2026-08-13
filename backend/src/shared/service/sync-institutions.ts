@@ -36,37 +36,28 @@ export class SyncInstitutionsService {
           syncedInstitutionDtos.map((inst) => inst.id),
         );
         yield* await this.unitOfWork.run(({ institutionRepository }) =>
-          safeTry<void, NotFoundError | SaveFailedError>(async function* () {
+          safeTry(async function* () {
             const oldInstitutions =
               yield* await institutionRepository.getByTournament(tournamentId);
             const oldInstitutionsMap = new Map<InstitutionId, Institution>(
               oldInstitutions.map((inst) => [inst.id, inst]),
             );
             // Delete nonexistent institutions from cache table
-            for (const inst of oldInstitutions.filter(
-              (inst) => !syncedInstitutionIdSet.has(inst.id),
-            )) {
-              yield* await institutionRepository.delete(inst);
-            }
+            yield* await institutionRepository.deleteMany(
+              oldInstitutions.filter(
+                (inst) => !syncedInstitutionIdSet.has(inst.id),
+              ),
+            );
             // Update/create new institutions
-            for (const dto of syncedInstitutionDtos) {
-              const foundInst = oldInstitutionsMap.get(dto.id);
-              if (foundInst !== undefined) {
-                const updatedInst = Institution.init({
-                  tournamentId: foundInst.tournamentId,
-                  ...dto,
-                });
-                yield* await institutionRepository.save(updatedInst);
-              } else {
-                yield* await institutionRepository.save(
-                  Institution.init({
-                    tournamentId: tournamentId,
-                    ...dto,
-                  }),
-                );
-              }
-            }
-            return ok();
+            return await institutionRepository.saveMany(
+              syncedInstitutionDtos.map((dto) =>
+                Institution.fromDto(
+                  dto,
+                  tournamentId,
+                  oldInstitutionsMap.get(dto.id),
+                ),
+              ),
+            );
           }),
         );
         return ok();

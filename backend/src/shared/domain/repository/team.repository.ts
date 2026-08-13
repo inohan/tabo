@@ -11,5 +11,7 @@ export abstract class TeamRepositoryPort {
     tournamentId: TournamentId,
   ): Promise<Result<Team[], never>>;
   abstract save(team: Team): Promise<Result<void, SaveFailedError>>;
+  abstract saveMany(teams: Team[]): Promise<Result<void, SaveFailedError>>;
   abstract delete(team: Team): Promise<Result<void, NotFoundError>>;
+  abstract deleteMany(teams: Team[]): Promise<Result<void, NotFoundError>>;
 }
