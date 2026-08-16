@@ -1,14 +1,11 @@
 import {
   BadRequestException,
   Body,
-  ClassSerializerInterceptor,
   Controller,
   Get,
   NotFoundException,
   Param,
   Post,
-  SerializeOptions,
-  UseInterceptors,
 } from '@nestjs/common';
 import { Session } from '@thallesp/nestjs-better-auth';
 import {
@@ -31,11 +28,12 @@ import {
 } from './dto/tournament.dto';
 import { HasActiveOrganization } from '../organization/active-organization.guard';
 import { TabbycatError } from '@shared/clients/tabbycat/error';
-import { throw_ } from 'src/lib/throw';
 import { ok, safeTry } from 'neverthrow';
 import type { ActiveUserSession } from '../lib/user-session';
 import { match, P } from 'ts-pattern';
-@UseInterceptors(ClassSerializerInterceptor)
+import { ApiValibotResponse } from '../lib/valibot';
+import { throwHttpError } from '../lib/throw-http-error';
+
 @Controller('tournaments')
 export class TournamentController {
   constructor(
@@ -48,7 +46,7 @@ export class TournamentController {
   ) {}
 
   // @MemberHasPermission({} as Permission)
-  @SerializeOptions({ type: NestTournamentDto })
+  @ApiValibotResponse(NestTournamentDto, { isArray: true })
   @HasActiveOrganization()
   @Get()
   async listTournaments(
@@ -66,10 +64,11 @@ export class TournamentController {
       }.bind(this),
     ).match(
       (t) => t,
-      () => throw_(new BadRequestException()),
+      (e) => match(e).exhaustive(),
     );
   }
 
+  @ApiValibotResponse(NestTournamentDto, { status: 201 })
   @HasActiveOrganization()
   @Post()
   createTournament(
@@ -104,25 +103,21 @@ export class TournamentController {
     ).match(
       (t) => t,
       (e) =>
-        throw_(
-          match(e)
-            .with(
-              P.instanceOf(NotFoundError),
-              (e) => new NotFoundException(e.message, { cause: e }),
-            )
-            .with(
-              P.instanceOf(SaveFailedError),
-              (e) => new BadRequestException(e.message, { cause: e }),
-            )
-            .with(
-              P.instanceOf(TabbycatError),
-              (e) => new BadRequestException(e.message, { cause: e }),
-            )
-            .exhaustive(),
-        ),
+        match(e)
+          .with(P.instanceOf(NotFoundError), throwHttpError(NotFoundException))
+          .with(
+            P.instanceOf(SaveFailedError),
+            throwHttpError(BadRequestException),
+          )
+          .with(
+            P.instanceOf(TabbycatError),
+            throwHttpError(BadRequestException),
+          )
+          .exhaustive(),
     );
   }
 
+  @ApiValibotResponse(NestQueryTournamentCandidateResponseDto, { status: 201 })
   @HasActiveOrganization()
   @Post('query-candidates')
   async searchFuzzyTournament(
@@ -141,22 +136,17 @@ export class TournamentController {
     ).match(
       (t) => t,
       (e) =>
-        throw_(
-          match(e)
-            .with(
-              P.instanceOf(NotFoundError),
-              (e) => new NotFoundException(e.message, { cause: e }),
-            )
-            .with(
-              P.instanceOf(TabbycatError),
-              (e) => new BadRequestException(e.message, { cause: e }),
-            )
-            .exhaustive(),
-        ),
+        match(e)
+          .with(P.instanceOf(NotFoundError), throwHttpError(NotFoundException))
+          .with(
+            P.instanceOf(TabbycatError),
+            throwHttpError(BadRequestException),
+          )
+          .exhaustive(),
     );
   }
 
-  @SerializeOptions({ type: NestTournamentDto })
+  @ApiValibotResponse(NestTournamentDto)
   @TournamentAuth()
   @Get(':tournamentId')
   async getTournament(
@@ -168,14 +158,9 @@ export class TournamentController {
     return result.match(
       (t) => t,
       (e) =>
-        throw_(
-          match(e)
-            .with(
-              P.instanceOf(NotFoundError),
-              (e) => new NotFoundException(e.message, { cause: e }),
-            )
-            .exhaustive(),
-        ),
+        match(e)
+          .with(P.instanceOf(NotFoundError), throwHttpError(NotFoundException))
+          .exhaustive(),
     );
   }
 }

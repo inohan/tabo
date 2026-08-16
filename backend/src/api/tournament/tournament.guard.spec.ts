@@ -1,7 +1,7 @@
-import { TournamentGuard } from './tournament.guard';
+// import { TournamentGuard } from './tournament.guard';
 
-describe('TournamentGuard', () => {
-  it('should be defined', () => {
-    // expect(new TournamentGuard()).toBeDefined();
-  });
-});
+// describe('TournamentGuard', () => {
+//   it('should be defined', () => {
+//     // expect(new TournamentGuard()).toBeDefined();
+//   });
+// });

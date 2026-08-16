@@ -4,6 +4,11 @@ import {
   TeamImportSessionId,
 } from '@importer/domain/models';
 import { TeamImportSessionRepositoryPort } from '@importer/domain/repository';
+import {
+  getMissingBreakCategories,
+  getMissingInstitutions,
+  getMissingSpeakerCategories,
+} from '@importer/domain/service/checker';
 import { TeamImportSessionFailedMissingEntities } from '@importer/domain/values';
 import { ClientFactoryPort } from '@shared/clients/tabbycat';
 import {
@@ -35,7 +40,7 @@ import { err, ok, safeTry } from 'neverthrow';
 import { throwUnexpected_ } from 'src/lib/throw';
 import { match, P } from 'ts-pattern';
 
-export class TeamImportService {
+export class ExecuteTeamImportService {
   constructor(
     private teamImportSessionRepository: TeamImportSessionRepositoryPort,
     private tournamentRepository: TournamentRepositoryPort,
@@ -49,6 +54,78 @@ export class TeamImportService {
     private tabbycatClientFactory: ClientFactoryPort,
   ) {}
 
+  async getMissingEntities(
+    {
+      tournamentId,
+      importSessionId,
+    }: {
+      tournamentId: TournamentId;
+      importSessionId: TeamImportSessionId;
+    },
+    options?: {
+      /**
+       * Whether institutions for composite teams should be imported automatically.
+       * *Note that institutions in institutional teams and institutional conflicts will automatically get imported.
+       */
+      insertCompositeTeamInstitution?: boolean;
+    },
+  ) {
+    const insertCompositeTeamInstitution =
+      options?.insertCompositeTeamInstitution ?? false;
+    return safeTry(
+      async function* (this: ExecuteTeamImportService) {
+        const importSession = yield* await this.teamImportSessionRepository.get(
+          { tournamentId, importSessionId },
+        );
+        const [
+          existingInstitutions,
+          existingBreakCategories,
+          existingSpeakerCategories,
+        ] = await Promise.all([
+          this.institutionQuery.getByTournamentId({ tournamentId }),
+          this.breakCategoryQuery.getByTournamentId({ tournamentId }),
+          this.speakerCategoryQuery.getByTournamentId({ tournamentId }),
+        ]);
+        const teamsToAdd = importSession.rows
+          .filter((row) => row.success)
+          .filter((row) => row.doImport)
+          .map((row) => row.parsed);
+        const necessaryInstitutions = teamsToAdd
+          .flatMap((team) => [
+            team.institution,
+            ...(team.institutionConflicts ?? []),
+            ...(insertCompositeTeamInstitution
+              ? team.speakers.map((spk) => spk.institution)
+              : []),
+          ])
+          .filter((institution) => institution !== null);
+        const necessaryBreakCategories = teamsToAdd.flatMap(
+          (team) => team.breakCategories,
+        );
+        const necessarySpeakerCategories = teamsToAdd.flatMap((team) =>
+          team.speakers.flatMap((spk) => spk.categories),
+        );
+        const missingInstitutions = getMissingInstitutions(
+          necessaryInstitutions,
+          existingInstitutions,
+        );
+        const missingBreakCategories = getMissingBreakCategories(
+          necessaryBreakCategories,
+          existingBreakCategories,
+        );
+        const missingSpeakerCategories = getMissingSpeakerCategories(
+          necessarySpeakerCategories,
+          existingSpeakerCategories,
+        );
+        return ok({
+          institutions: missingInstitutions,
+          breakCategories: missingBreakCategories,
+          speakerCategories: missingSpeakerCategories,
+        });
+      }.bind(this),
+    );
+  }
+
   async execute({
     tournamentId,
     importSessionId,
@@ -57,13 +134,17 @@ export class TeamImportService {
     importSessionId: TeamImportSessionId;
   }) {
     return safeTry(
-      async function* (this: TeamImportService) {
+      async function* (this: ExecuteTeamImportService) {
         const importSession = yield* await this.teamImportSessionRepository.get(
           {
             tournamentId,
             importSessionId,
           },
         );
+        const missingEntities = yield* await this.getMissingEntities({
+          tournamentId,
+          importSessionId,
+        });
         const createInstitutionService = new CreateInstitutionService(
           this.tournamentRepository,
           this.institutionRepository,
@@ -87,7 +168,7 @@ export class TeamImportService {
           await Promise.all([
             createInstitutionService.executeMany(
               tournamentId,
-              importSession.missingInstitutions.map((code) => ({
+              missingEntities.institutions.map((code) => ({
                 name: code,
                 code,
               })),
@@ -97,7 +178,7 @@ export class TeamImportService {
             ),
             createBreakCategoryService.executeMany(
               tournamentId,
-              importSession.missingBreakCategories.map((slug, idx) => ({
+              missingEntities.breakCategories.map((slug, idx) => ({
                 name: slug,
                 slug,
                 isGeneral: false,
@@ -111,7 +192,7 @@ export class TeamImportService {
             ),
             createSpeakerCategoryService.executeMany(
               tournamentId,
-              importSession.missingSpeakerCategories.map((slug, idx) => ({
+              missingEntities.speakerCategories.map((slug, idx) => ({
                 name: slug,
                 slug,
                 seq: (scMaxSeq ?? 0) + idx + 1,
@@ -139,7 +220,7 @@ export class TeamImportService {
                               () => undefined,
                               (err) => ({
                                 code:
-                                  importSession.missingInstitutions[index] ??
+                                  missingEntities.institutions[index] ??
                                   throwUnexpected_(),
                                 reason: err.message,
                               }),
@@ -162,7 +243,7 @@ export class TeamImportService {
                               () => undefined,
                               (err) => ({
                                 slug:
-                                  importSession.missingBreakCategories[index] ??
+                                  missingEntities.breakCategories[index] ??
                                   throwUnexpected_(),
                                 reason: err.message,
                               }),
@@ -185,9 +266,8 @@ export class TeamImportService {
                               () => undefined,
                               (err) => ({
                                 slug:
-                                  importSession.missingSpeakerCategories[
-                                    index
-                                  ] ?? throwUnexpected_(),
+                                  missingEntities.speakerCategories[index] ??
+                                  throwUnexpected_(),
                                 reason: err.message,
                               }),
                             ),

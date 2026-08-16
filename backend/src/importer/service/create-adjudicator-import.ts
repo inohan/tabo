@@ -50,11 +50,8 @@ export class CreateAdjudicatorImportSessionService {
           this.institutionQuery.getByTournamentId({
             tournamentId,
           });
-        const readService = new ReadFileService(origin, {
-          auth,
-          accessToken,
-        });
-        const data = yield* await readService.read();
+        const readService = new ReadFileService();
+        const data = yield* await readService.read(origin, { type: 'none' });
         // Array of results (not vice versa)
         const parseRowResults = parseRawTable(data).map((rowResult) =>
           rowResult.andThen(parseAdjudicatorImportRow),

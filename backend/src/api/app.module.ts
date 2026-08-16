@@ -1,4 +1,4 @@
-import { ClassSerializerInterceptor, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { auth } from '@identity/infrastructure/persistence/auth';
@@ -9,12 +9,27 @@ import { ActiveOrganizationGuard } from './organization/active-organization.guar
 import { TournamentGuard } from './tournament/tournament.guard';
 import { InstitutionController } from './institution/institution.controller';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { TeamImportController } from './importer/team/team.controller';
+import { AdjudicatorController } from './importer/adjudicator/adjudicator.controller';
+import { ImporterModule } from './importer/importer.module';
+import { ValibotSerializerInterceptor } from './lib/valibot';
 
 @Module({
-  imports: [AuthModule.forRoot({ auth }), IdentityModule, SharedModule],
-  controllers: [AppController, TournamentController, InstitutionController],
+  imports: [
+    AuthModule.forRoot({ auth }),
+    IdentityModule,
+    SharedModule,
+    ImporterModule,
+  ],
+  controllers: [
+    AppController,
+    TournamentController,
+    InstitutionController,
+    TeamImportController,
+    AdjudicatorController,
+  ],
   providers: [
-    { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: ValibotSerializerInterceptor },
     ActiveOrganizationGuard,
     TournamentGuard,
   ],

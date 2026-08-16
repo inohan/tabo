@@ -12,6 +12,7 @@ import {
   TeamImport,
   TeamImportResult,
   TeamImportSessionFailedMissingEntities,
+  TeamMatchStatus,
   TeamUpdateNecessity,
 } from '../values';
 import { match } from 'ts-pattern';
@@ -33,7 +34,7 @@ export type TeamImportRow = Branded<
     | {
         success: true;
         parsed: TeamImport;
-        matched: TeamId | null;
+        matched: TeamMatchStatus;
         updateNecessity: TeamUpdateNecessity;
         duplication: SerializedTeamDuplicationStatus;
         doImport: boolean;
@@ -73,9 +74,6 @@ export type TeamImportSession = Branded<
     origin: ImportOrigin;
     headers: (string | null)[];
     rows: TeamImportRow[];
-    missingInstitutions: string[];
-    missingBreakCategories: string[];
-    missingSpeakerCategories: string[];
     // headerMappings: Record<string, string>;
     createdAt: Date;
     updatedAt: Date;
@@ -104,9 +102,6 @@ export const TeamImportSession = {
     origin: ImportOrigin;
     headers: (string | null)[];
     rows: TeamImportRow[];
-    missingInstitutions: string[];
-    missingBreakCategories: string[];
-    missingSpeakerCategories: string[];
   }) => {
     const current = new Date();
     return TeamImportSession.init({

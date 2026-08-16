@@ -14,6 +14,7 @@ import {
   TeamImport,
   TeamImportResult,
   TeamImportSessionFailedDetail,
+  TeamMatchStatus,
   TeamUpdateNecessity,
 } from '@importer/domain/values';
 import { integer } from 'drizzle-orm/pg-core';
@@ -39,9 +40,6 @@ export const teamImportSessionTable = importerSchema.table(
     updatedAt: timestamp().notNull(),
     status: teamImportSessionStatusEnum().notNull(),
     headers: jsonb().$type<(string | null)[]>().notNull(),
-    missingInstitutions: varchar().array().notNull(),
-    missingBreakCategories: varchar().array().notNull(),
-    missingSpeakerCategories: varchar().array().notNull(),
     errorDetail: jsonb().$type<TeamImportSessionFailedDetail>(),
   },
 );
@@ -59,7 +57,7 @@ export const importTeamRowTable = importerSchema.table(
     success: boolean().notNull(),
     error: varchar(),
     parsed: jsonb().$type<TeamImport>(),
-    matched: integer(),
+    matched: jsonb().$type<TeamMatchStatus>(),
     updateNecessity: jsonb().$type<TeamUpdateNecessity>(),
     duplication: jsonb().$type<SerializedTeamDuplicationStatus>(),
     doImport: boolean(),
@@ -82,7 +80,6 @@ export const adjudicatorImportSessionTable = importerSchema.table(
     createdAt: timestamp().notNull(),
     updatedAt: timestamp().notNull(),
     headers: jsonb().$type<(string | null)[]>().notNull(),
-    missingInstitutions: varchar().array().notNull(),
     errorDetail: jsonb().$type<AdjudicatorImportSessionFailedDetail>(),
   },
 );

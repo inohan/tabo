@@ -26,10 +26,12 @@ describe('Grouping teams', () => {
           name: 'Speaker 1',
           email: 'speaker1@gmail.com',
           categories: 'open, esl',
+          __col: 1,
         },
         {
           name: 'Speaker 2',
           categories: 'open',
+          __col: 2,
         },
       ],
     });

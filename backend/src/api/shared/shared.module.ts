@@ -12,7 +12,10 @@ import {
 } from '@shared/domain/repository';
 import { Db as SharedDb } from '@shared/infrastructure/persistence/db';
 import {
+  BreakCategoryQuery,
   InstitutionQuery,
+  SpeakerCategoryQuery,
+  TeamQuery,
   TournamentQuery,
 } from '@shared/infrastructure/query';
 import {
@@ -42,140 +45,128 @@ import {
 } from '@shared/service';
 import { CamelCasePlugin, Kysely, PostgresDialect } from 'kysely';
 import { Pool } from 'pg';
+import { buildProvider } from '../lib/provider';
 
-const SHARED_DB = Symbol('SHARED_DB');
-const TABBYCAT_CLIENT_FACTORY = Symbol('TABBYCAT_CLIENT_FACTORY');
+export const SHARED_DB = Symbol('SHARED_DB');
+export const TABBYCAT_CLIENT_FACTORY = Symbol('TABBYCAT_CLIENT_FACTORY');
 
-const baseProviders = [
-  {
+const sharedProviders = buildProvider()
+  .provide({
     provide: SHARED_DB,
     useFactory: () =>
       new Kysely({
         dialect: new PostgresDialect({
           pool: new Pool({
-            connectionString: process.env.DATABASE_URL,
+            connectionString:
+              process.env.DATABASE_URL_SHARED ?? process.env.DATABASE_URL,
             max: 8,
           }),
         }),
         plugins: [new CamelCasePlugin()],
-      }).withSchema('shared'),
-  },
-  {
-    provide: TABBYCAT_CLIENT_FACTORY,
-    useValue: generateClientV1_3,
-  },
-] as const;
-
-const provideRepository = <T>(
-  abstract: abstract new (...args: never[]) => T,
-  concrete: new (db: SharedDb) => T,
-) => ({
-  provide: abstract,
-  useFactory: (db: SharedDb) => new concrete(db),
-  inject: [SHARED_DB],
-});
-
-const provideQuery = <T>(cls: new (db: SharedDb) => T) => ({
-  provide: cls,
-  useFactory: (db: SharedDb) => new cls(db),
-  inject: [SHARED_DB],
-});
-
-const repositoryProviders = [
-  provideRepository(AdjudicatorRepositoryPort, AdjudicatorRepository),
-  provideRepository(BreakCategoryRepositoryPort, BreakCategoryRepository),
-  provideRepository(InstitutionRepositoryPort, InstitutionRepository),
-  provideRepository(SpeakerCategoryRepositoryPort, SpeakerCategoryRepository),
-  provideRepository(SpeakerRepositoryPort, SpeakerRepository),
-  provideRepository(TeamRepositoryPort, TeamRepository),
-  provideRepository(TournamentRepositoryPort, TournamentRepository),
-  provideRepository(UnitOfWorkPort, UnitOfWork),
-  provideQuery(TournamentQuery),
-  provideQuery(InstitutionQuery),
-] as const;
-
-type Providers = [
-  ...typeof baseProviders,
-  ...typeof repositoryProviders,
-][number];
-
-type Injected<
-  T extends
-    | { readonly provide: unknown; useValue: unknown }
-    | { readonly provide: unknown; useFactory: (...args: never[]) => unknown },
-> = [T] extends [never]
-  ? unknown
-  : T extends { useValue: unknown }
-    ? T['useValue']
-    : T extends { useFactory: (...args: never[]) => unknown }
-      ? ReturnType<T['useFactory']>
-      : unknown;
-
-type MapInjection<T extends Providers['provide'][]> = {
-  [K in keyof T]: Injected<Extract<Providers, { readonly provide: T[K] }>>;
-};
-
-const provideService = <
-  T,
-  U extends [Providers['provide'], ...Providers['provide'][]],
->(
-  service: new (...args: MapInjection<U>) => T,
-  inject: U,
-) => ({
-  provide: service,
-  useFactory: (...args: MapInjection<U>) => new service(...args),
-  inject,
-});
-
-const serviceProviders = [
-  provideService(CreateAdjudicatorService, [
+      }).withSchema('shared') as SharedDb,
+  })
+  .provide({ provide: TABBYCAT_CLIENT_FACTORY, useValue: generateClientV1_3 })
+  .provideAbstractClass(AdjudicatorRepositoryPort, AdjudicatorRepository, [
+    SHARED_DB,
+  ])
+  .provideAbstractClass(BreakCategoryRepositoryPort, BreakCategoryRepository, [
+    SHARED_DB,
+  ])
+  .provideAbstractClass(InstitutionRepositoryPort, InstitutionRepository, [
+    SHARED_DB,
+  ])
+  .provideAbstractClass(
+    SpeakerCategoryRepositoryPort,
+    SpeakerCategoryRepository,
+    [SHARED_DB],
+  )
+  .provideAbstractClass(SpeakerRepositoryPort, SpeakerRepository, [SHARED_DB])
+  .provideAbstractClass(TeamRepositoryPort, TeamRepository, [SHARED_DB])
+  .provideAbstractClass(TournamentRepositoryPort, TournamentRepository, [
+    SHARED_DB,
+  ])
+  .provideAbstractClass(UnitOfWorkPort, UnitOfWork, [SHARED_DB])
+  .provideClass(TournamentQuery, [SHARED_DB])
+  .provideClass(InstitutionQuery, [SHARED_DB])
+  .provideClass(TeamQuery, [SHARED_DB])
+  .provideClass(BreakCategoryQuery, [SHARED_DB])
+  .provideClass(SpeakerCategoryQuery, [SHARED_DB])
+  .provideClass(CreateAdjudicatorService, [
     TournamentRepositoryPort,
     AdjudicatorRepositoryPort,
     TABBYCAT_CLIENT_FACTORY,
-  ]),
-  provideService(CreateBreakCategoryService, [
+  ])
+  .provideClass(CreateBreakCategoryService, [
     TournamentRepositoryPort,
     BreakCategoryRepositoryPort,
     TABBYCAT_CLIENT_FACTORY,
-  ]),
-  provideService(CreateInstitutionService, [
+  ])
+  .provideClass(CreateInstitutionService, [
     TournamentRepositoryPort,
     InstitutionRepositoryPort,
     TABBYCAT_CLIENT_FACTORY,
-  ]),
-  provideService(CreateSpeakerCategoryService, [
+  ])
+  .provideClass(CreateSpeakerCategoryService, [
     TournamentRepositoryPort,
     SpeakerCategoryRepositoryPort,
     TABBYCAT_CLIENT_FACTORY,
-  ]),
-  provideService(CreateSpeakerService, [
+  ])
+  .provideClass(CreateSpeakerService, [
     TournamentRepositoryPort,
     SpeakerRepositoryPort,
     TABBYCAT_CLIENT_FACTORY,
-  ]),
-  provideService(CreateTeamService, [
+  ])
+  .provideClass(CreateTeamService, [
     TournamentRepositoryPort,
     UnitOfWorkPort,
     TABBYCAT_CLIENT_FACTORY,
-  ]),
-  provideService(CreateTournamentService, [
+  ])
+  .provideClass(CreateTournamentService, [
     TournamentRepositoryPort,
     TABBYCAT_CLIENT_FACTORY,
-  ]),
-  provideService(GetTournamentService, [TournamentQuery]),
-  provideService(ListTournamentsService, [TournamentQuery]),
-  provideService(VerifyTournamentService, [TABBYCAT_CLIENT_FACTORY]),
-  provideService(GetInstitutionService, [InstitutionQuery]),
-  provideService(ListInstitutionsService, [InstitutionQuery]),
-  provideService(SyncInstitutionsService, [
+  ])
+  .provideClass(GetTournamentService, [TournamentQuery])
+  .provideClass(ListTournamentsService, [TournamentQuery])
+  .provideClass(VerifyTournamentService, [TABBYCAT_CLIENT_FACTORY])
+  .provideClass(GetInstitutionService, [InstitutionQuery])
+  .provideClass(ListInstitutionsService, [InstitutionQuery])
+  .provideClass(SyncInstitutionsService, [
     TournamentRepositoryPort,
     UnitOfWorkPort,
     TABBYCAT_CLIENT_FACTORY,
-  ]),
-] as const;
+  ]);
+
+export const sharedProvidersExported = sharedProviders.pick([
+  TABBYCAT_CLIENT_FACTORY,
+  AdjudicatorRepositoryPort,
+  BreakCategoryRepositoryPort,
+  InstitutionRepositoryPort,
+  SpeakerCategoryRepositoryPort,
+  SpeakerRepositoryPort,
+  TeamRepositoryPort,
+  TournamentRepositoryPort,
+  UnitOfWorkPort,
+  TournamentQuery,
+  InstitutionQuery,
+  TeamQuery,
+  GetTournamentService,
+  CreateTournamentService,
+  ListTournamentsService,
+  VerifyTournamentService,
+  GetInstitutionService,
+  ListInstitutionsService,
+  SyncInstitutionsService,
+  CreateInstitutionService,
+  BreakCategoryQuery,
+  SpeakerCategoryQuery,
+  CreateAdjudicatorService,
+  CreateBreakCategoryService,
+  CreateSpeakerCategoryService,
+  CreateTeamService,
+]);
 
 @Module({
-  providers: [...baseProviders, ...repositoryProviders, ...serviceProviders],
-  exports: serviceProviders.map((provider) => provider.provide),
+  providers: sharedProviders.compile(),
+  exports: sharedProvidersExported.compile(),
 })
 export class SharedModule {}

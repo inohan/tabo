@@ -34,7 +34,6 @@ const toSessionModel = (
         origin: session.origin,
         headers: session.headers,
         rows: session.rows.map(toRowModel),
-        missingInstitutions: session.missingInstitutions,
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,
         status: session.status,
@@ -47,7 +46,6 @@ const toSessionModel = (
         origin: session.origin,
         headers: session.headers,
         rows: session.rows.map(toRowModel),
-        missingInstitutions: session.missingInstitutions,
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,
         status: session.status,
@@ -61,7 +59,6 @@ const toSessionModel = (
         origin: session.origin,
         headers: session.headers,
         rows: session.rows.map(toRowModel),
-        missingInstitutions: session.missingInstitutions,
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,
         status: session.status,
@@ -74,7 +71,6 @@ const toSessionModel = (
         origin: session.origin,
         headers: session.headers,
         rows: session.rows.map(toRowModel),
-        missingInstitutions: session.missingInstitutions,
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,
         status: session.status,
@@ -132,16 +128,8 @@ export class AdjudicatorImportSessionRepository extends AdjudicatorImportSession
   }): Promise<Result<AdjudicatorImportSession, NotFoundError>> {
     const importSession = await this.db
       .selectFrom('adjudicatorImportSession')
+      .selectAll()
       .select((eb) => [
-        'sessionId',
-        'tournamentId',
-        'origin',
-        'createdAt',
-        'updatedAt',
-        'headers',
-        'missingInstitutions',
-        'status',
-        'errorDetail',
         jsonArrayFrom(
           eb
             .selectFrom('importAdjudicatorRow')
@@ -174,16 +162,8 @@ export class AdjudicatorImportSessionRepository extends AdjudicatorImportSession
   }): Promise<Result<AdjudicatorImportSession[], never>> {
     const importSessions = await this.db
       .selectFrom('adjudicatorImportSession')
+      .selectAll()
       .select((eb) => [
-        'sessionId',
-        'tournamentId',
-        'origin',
-        'createdAt',
-        'updatedAt',
-        'headers',
-        'missingInstitutions',
-        'status',
-        'errorDetail',
         jsonArrayFrom(
           eb
             .selectFrom('importAdjudicatorRow')
@@ -215,7 +195,6 @@ export class AdjudicatorImportSessionRepository extends AdjudicatorImportSession
             updatedAt: importSession.updatedAt,
             origin: castJson(importSession.origin),
             headers: castJson(importSession.headers),
-            missingInstitutions: importSession.missingInstitutions,
             status: importSession.status,
             errorDetail:
               importSession.status === 'missing-entities'
@@ -229,8 +208,6 @@ export class AdjudicatorImportSessionRepository extends AdjudicatorImportSession
               updatedAt: (eb) => eb.ref('excluded.updatedAt'),
               origin: (eb) => eb.ref('excluded.origin'),
               headers: (eb) => eb.ref('excluded.headers'),
-              missingInstitutions: (eb) =>
-                eb.ref('excluded.missingInstitutions'),
               status: (eb) => eb.ref('excluded.status'),
               errorDetail: (eb) => eb.ref('excluded.errorDetail'),
             }),

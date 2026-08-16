@@ -2,7 +2,6 @@ import { Branded, Struct } from 'src/lib/brand';
 import {
   AdjudicatorImport,
   AdjudicatorImportResult,
-  AdjudicatorImportSessionFailedDetail,
   AdjudicatorImportSessionFailedMissingEntries,
   AdjudicatorUpdateNecessity,
   CellValue,
@@ -57,7 +56,6 @@ export type AdjudicatorImportSession = Branded<
     origin: ImportOrigin;
     headers: (string | null)[];
     rows: AdjudicatorImportRow[];
-    missingInstitutions: string[];
     createdAt: Date;
     updatedAt: Date;
   } & (

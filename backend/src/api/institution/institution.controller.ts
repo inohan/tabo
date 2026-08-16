@@ -5,11 +5,11 @@ import {
   Get,
   NotFoundException,
   Param,
+  ParseIntPipe,
   Post,
 } from '@nestjs/common';
 import { TournamentAuth } from '../tournament/tournament.guard';
 import { ok, safeTry } from 'neverthrow';
-import { throw_ } from 'src/lib/throw';
 import {
   CreateInstitutionService,
   GetInstitutionService,
@@ -28,6 +28,8 @@ import {
   NestInstitutionDto,
 } from './dto/institution.dto';
 import { TabbycatError } from '@shared/clients/tabbycat/error';
+import { ApiValibotResponse } from '../lib/valibot';
+import { throwHttpError } from '../lib/throw-http-error';
 
 @TournamentAuth()
 @Controller('tournaments/:tournamentId/institutions')
@@ -39,6 +41,7 @@ export class InstitutionController {
     private createInstitutionService: CreateInstitutionService,
   ) {}
 
+  @ApiValibotResponse(NestInstitutionDto, { isArray: true })
   @Get()
   async listInstitutions(
     @Param('tournamentId') tournamentId: string,
@@ -49,10 +52,11 @@ export class InstitutionController {
 
     return result.match(
       (t) => t,
-      (e) => throw_(match(e).exhaustive()),
+      (e) => match(e).exhaustive(),
     );
   }
 
+  @ApiValibotResponse(NestInstitutionDto, { status: 201, isArray: true })
   @Post('sync')
   async syncInstitutions(
     @Param('tournamentId') tournamentIdRaw: string,
@@ -68,25 +72,24 @@ export class InstitutionController {
     ).match(
       (t) => t,
       (e) =>
-        throw_(
-          match(e)
-            .with(
-              P.instanceOf(NotFoundError),
-              (e) => new NotFoundException(e.message, { cause: e }),
-            )
-            .with(
-              P.instanceOf(TabbycatError),
-              (e) => new BadRequestException(e.message, { cause: e }),
-            )
-            .with(
-              P.instanceOf(SaveFailedError),
-              (e) => new BadRequestException(e.message, { cause: e }),
-            )
-            .exhaustive(),
-        ),
+        match(e)
+          .with(
+            P.instanceOf(NotFoundError),
+            throwHttpError(BadRequestException),
+          )
+          .with(
+            P.instanceOf(TabbycatError),
+            throwHttpError(BadRequestException),
+          )
+          .with(
+            P.instanceOf(SaveFailedError),
+            throwHttpError(BadRequestException),
+          )
+          .exhaustive(),
     );
   }
 
+  @ApiValibotResponse(NestInstitutionDto, { status: 201 })
   @Post()
   async createInstitution(
     @Body() { name, code }: NestCreateInstitutionDto,
@@ -109,29 +112,27 @@ export class InstitutionController {
     ).match(
       (t) => t,
       (e) =>
-        throw_(
-          match(e)
-            .with(
-              P.instanceOf(NotFoundError),
-              (e) => new NotFoundException(e.message, { cause: e }),
-            )
-            .with(
-              P.instanceOf(TabbycatError),
-              (e) => new BadRequestException(e.message, { cause: e }),
-            )
-            .with(
-              P.instanceOf(SaveFailedError),
-              (e) => new BadRequestException(e.message, { cause: e }),
-            )
-            .exhaustive(),
-        ),
+        match(e)
+          .with(P.instanceOf(NotFoundError), throwHttpError(NotFoundException))
+          .with(
+            P.instanceOf(TabbycatError),
+            throwHttpError(BadRequestException),
+          )
+          .with(
+            P.instanceOf(SaveFailedError),
+            throwHttpError(BadRequestException),
+          )
+          .exhaustive(),
     );
   }
 
+  @ApiValibotResponse(NestInstitutionDto)
   @Get(':institutionId')
   async getInstitution(
     @Param('tournamentId') tournamentIdRaw: string,
-    @Param('institutionId') institutionIdRaw: number,
+    // Route params arrive as strings; the `number` annotation alone never
+    // converted them, so this was reaching the query layer as a string.
+    @Param('institutionId', ParseIntPipe) institutionIdRaw: number,
   ): Promise<NestInstitutionDto> {
     const result = await this.getInstitutionService.execute(
       TournamentId.init(tournamentIdRaw),
@@ -140,14 +141,9 @@ export class InstitutionController {
     return result.match(
       (t) => t,
       (e) =>
-        throw_(
-          match(e)
-            .with(
-              P.instanceOf(NotFoundError),
-              (e) => new NotFoundException(e.message, { cause: e }),
-            )
-            .exhaustive(),
-        ),
+        match(e)
+          .with(P.instanceOf(NotFoundError), throwHttpError(NotFoundException))
+          .exhaustive(),
     );
   }
 

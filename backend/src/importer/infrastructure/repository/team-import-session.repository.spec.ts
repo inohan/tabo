@@ -19,9 +19,6 @@ const generateTeamImportSession = () =>
       type: 'csv',
       id: 'test_csv',
     },
-    missingInstitutions: ['Institution A'],
-    missingBreakCategories: ['esl'],
-    missingSpeakerCategories: [],
     rows: [
       TeamImportRow.init({
         raw: ['Team A', 'Institution A', 'open, esl'],
@@ -32,7 +29,9 @@ const generateTeamImportSession = () =>
           breakCategories: ['open', 'esl'],
           speakers: [],
         },
-        matched: null,
+        matched: {
+          existing: null,
+        },
         updateNecessity: {
           team: 'new',
         },
@@ -77,9 +76,6 @@ describe('Importer DB', () => {
           id: 'test_csv',
         }),
         headers: castJson(['reference', 'institution', 'breakCategories']),
-        missingInstitutions: ['Institution A'],
-        missingBreakCategories: ['esl'],
-        missingSpeakerCategories: [],
         createdAt: timestamp,
         updatedAt: timestamp,
         status: 'incomplete',
@@ -100,7 +96,7 @@ describe('Importer DB', () => {
             reference: 'Team A',
             breakCategories: ['open', 'esl'],
           }),
-          matched: null,
+          matched: castJson({ existing: null }),
           updateNecessity: castJson({
             team: 'new',
           }),
@@ -196,7 +192,9 @@ describe('Importer DB', () => {
         breakCategories: ['open'],
         speakers: [],
       },
-      matched: null,
+      matched: {
+        existing: null,
+      },
       updateNecessity: {
         team: 'new',
       },
@@ -229,9 +227,6 @@ describe('Importer DB', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       headers: [],
-      missingInstitutions: ['Institution A'],
-      missingBreakCategories: ['esl'],
-      missingSpeakerCategories: [],
       origin: {
         type: 'google-sheets',
         id: 'test_google_sheet_id',

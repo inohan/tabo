@@ -1,11 +1,6 @@
 import { TeamImportSessionRepositoryPort } from '../../domain/repository';
 import { Db, DbSchema } from '../persistence/db';
-import {
-  NotFoundError,
-  SaveFailedError,
-  TeamId,
-  TournamentId,
-} from '@shared/domain';
+import { NotFoundError, SaveFailedError, TournamentId } from '@shared/domain';
 import { err, ok, Result } from 'neverthrow';
 import {
   TeamImportSession,
@@ -34,9 +29,6 @@ const toSessionModel = (
         origin: session.origin,
         headers: session.headers,
         rows: session.rows.map(toRowModel),
-        missingInstitutions: session.missingInstitutions,
-        missingBreakCategories: session.missingBreakCategories,
-        missingSpeakerCategories: session.missingSpeakerCategories,
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,
         status: session.status,
@@ -49,9 +41,6 @@ const toSessionModel = (
         origin: session.origin,
         headers: session.headers,
         rows: session.rows.map(toRowModel),
-        missingInstitutions: session.missingInstitutions,
-        missingBreakCategories: session.missingBreakCategories,
-        missingSpeakerCategories: session.missingSpeakerCategories,
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,
         status: session.status,
@@ -65,9 +54,6 @@ const toSessionModel = (
         origin: session.origin,
         headers: session.headers,
         rows: session.rows.map(toRowModel),
-        missingInstitutions: session.missingInstitutions,
-        missingBreakCategories: session.missingBreakCategories,
-        missingSpeakerCategories: session.missingSpeakerCategories,
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,
         status: session.status,
@@ -80,9 +66,6 @@ const toSessionModel = (
         origin: session.origin,
         headers: session.headers,
         rows: session.rows.map(toRowModel),
-        missingInstitutions: session.missingInstitutions,
-        missingBreakCategories: session.missingBreakCategories,
-        missingSpeakerCategories: session.missingSpeakerCategories,
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,
         status: session.status,
@@ -110,7 +93,7 @@ const toRowModel = (
           success,
           raw,
           parsed: parsed !== null ? parsed : throw_(new Error()),
-          matched: matched !== null ? TeamId.init(matched) : null,
+          matched: matched !== null ? matched : throwUnexpected_(),
           updateNecessity:
             updateNecessity !== null ? updateNecessity : throw_(new Error()),
           duplication: duplication !== null ? duplication : throw_(new Error()),
@@ -140,18 +123,8 @@ export class TeamImportSessionRepository extends TeamImportSessionRepositoryPort
   }): Promise<Result<TeamImportSession, NotFoundError>> {
     const importSession = await this.db
       .selectFrom('teamImportSession')
+      .selectAll()
       .select((eb) => [
-        'sessionId',
-        'tournamentId',
-        'origin',
-        'createdAt',
-        'updatedAt',
-        'headers',
-        'missingInstitutions',
-        'missingBreakCategories',
-        'missingSpeakerCategories',
-        'status',
-        'errorDetail',
         jsonArrayFrom(
           eb
             .selectFrom('importTeamRow')
@@ -182,18 +155,8 @@ export class TeamImportSessionRepository extends TeamImportSessionRepositoryPort
   }): Promise<Result<TeamImportSession[], never>> {
     const importSessions = await this.db
       .selectFrom('teamImportSession')
+      .selectAll()
       .select((eb) => [
-        'sessionId',
-        'tournamentId',
-        'origin',
-        'createdAt',
-        'updatedAt',
-        'headers',
-        'missingInstitutions',
-        'missingBreakCategories',
-        'missingSpeakerCategories',
-        'status',
-        'errorDetail',
         jsonArrayFrom(
           eb
             .selectFrom('importTeamRow')
@@ -225,9 +188,6 @@ export class TeamImportSessionRepository extends TeamImportSessionRepositoryPort
             updatedAt: importSession.updatedAt,
             origin: castJson(importSession.origin),
             headers: castJson(importSession.headers),
-            missingInstitutions: importSession.missingInstitutions,
-            missingBreakCategories: importSession.missingBreakCategories,
-            missingSpeakerCategories: importSession.missingSpeakerCategories,
             status: importSession.status,
             errorDetail:
               importSession.status === 'missing-entities'
@@ -241,12 +201,6 @@ export class TeamImportSessionRepository extends TeamImportSessionRepositoryPort
               updatedAt: (eb) => eb.ref('excluded.updatedAt'),
               origin: (eb) => eb.ref('excluded.origin'),
               headers: (eb) => eb.ref('excluded.headers'),
-              missingInstitutions: (eb) =>
-                eb.ref('excluded.missingInstitutions'),
-              missingBreakCategories: (eb) =>
-                eb.ref('excluded.missingBreakCategories'),
-              missingSpeakerCategories: (eb) =>
-                eb.ref('excluded.missingSpeakerCategories'),
               status: (eb) => eb.ref('excluded.status'),
               errorDetail: (eb) => eb.ref('excluded.errorDetail'),
             }),

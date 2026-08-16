@@ -1,34 +1,26 @@
 import { GoogleSheetsClient } from '../clients/google-sheet';
 import { ImportOrigin } from '../domain/values';
 import { match, P } from 'ts-pattern';
-import { OAuth2Client, GoogleAuth } from 'google-auth-library';
 import { err } from 'neverthrow';
 import { AuthError } from '@shared/domain';
 import { google } from 'googleapis';
 import { GoogleSheetsImportFileReader } from '../infrastructure/reader';
 import { throw_ } from 'src/lib/throw';
+import { ImportCredentials } from '@importer/domain/values/import-credentials';
 
 export class ReadFileService {
-  constructor(
-    private origin: ImportOrigin,
-    private options?: {
-      auth?: OAuth2Client | GoogleAuth;
-      accessToken?: string;
-    },
-  ) {}
-
-  async read() {
-    return match(this.origin)
+  async read(origin: ImportOrigin, credentials: ImportCredentials) {
+    return match(origin)
       .with({ type: 'google-sheets' }, async (origin) => {
-        const auth = match(this.options)
-          .with({ auth: P.nonNullable }, ({ auth }) => auth)
-          .with({ accessToken: P.string }, ({ accessToken }) => {
+        const auth = match(credentials)
+          .with({ type: 'google', accessToken: P.string }, (credentials) => {
             const auth = new google.auth.OAuth2();
             auth.setCredentials({
-              access_token: accessToken,
+              access_token: credentials.accessToken,
             });
             return auth;
           })
+          .with({ type: 'google', auth: P.nonNullable }, ({ auth }) => auth)
           .otherwise(() => undefined);
         if (!auth) {
           return err(new AuthError('Auth for google not provided'));

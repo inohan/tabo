@@ -1,21 +1,21 @@
 import { ImportOrigin } from '../domain/values';
-import { TeamId, TournamentId } from '@shared/domain/models';
+import { TournamentId } from '@shared/domain/models';
 import { ReadFileService } from './read-file';
-import { GoogleAuth, OAuth2Client } from 'google-auth-library';
-import { safeTry } from 'neverthrow';
+import { ok, Result, safeTry } from 'neverthrow';
 import {
   groupTeamImportRow,
   parseGroupedTeamImportRow,
   parseRawTable,
 } from '../domain/service/parser';
-import { TeamImportSession, TeamImportRow } from '../domain/models';
+import {
+  TeamImportSession,
+  TeamImportRow,
+  TeamImportSessionId,
+} from '../domain/models';
 import { TeamImportSessionRepositoryPort } from '../domain/repository';
 import { throw_, throwUnexpected_ } from 'src/lib/throw';
 import {
   checkTeam,
-  getMissingBreakCategories,
-  getMissingInstitutions,
-  getMissingSpeakerCategories,
   serializeTeamDuplicationStatus,
 } from '../domain/service/checker';
 import {
@@ -24,6 +24,8 @@ import {
   SpeakerCategoryQuery,
   TeamQuery,
 } from '@shared/infrastructure/query';
+import { ImportCredentials } from '@importer/domain/values/import-credentials';
+import { AuthError, NotFoundError, SaveFailedError } from '@shared/domain';
 
 export class CreateTeamImportSessionService {
   constructor(
@@ -32,51 +34,28 @@ export class CreateTeamImportSessionService {
     private institutionQuery: InstitutionQuery,
     private breakCategoryQuery: BreakCategoryQuery,
     private speakerCategoryQuery: SpeakerCategoryQuery,
+    private readFileService: ReadFileService,
   ) {}
-  async execute(
-    {
-      tournamentId,
-      origin,
-      auth,
-      accessToken,
-    }: {
-      tournamentId: TournamentId;
-      origin: ImportOrigin;
-      auth?: OAuth2Client | GoogleAuth;
-      accessToken?: string;
-    },
-    options?: {
-      /**
-       * Whether institutions for composite teams should be imported automatically.
-       * *Note that institutions in institutional teams and institutional conflicts will automatically get imported.
-       */
-      insertCompositeTeamInstitution?: boolean;
-    },
-  ) {
-    const insertCompositeTeamInstitution =
-      options?.insertCompositeTeamInstitution ?? false;
+  async execute({
+    tournamentId,
+    origin,
+    credentials,
+  }: {
+    tournamentId: TournamentId;
+    origin: ImportOrigin;
+    credentials: ImportCredentials;
+  }): Promise<
+    Result<TeamImportSessionId, AuthError | NotFoundError | SaveFailedError>
+  > {
     return await safeTry(
       async function* (this: CreateTeamImportSessionService) {
         const existingTeamsPromise = this.teamQuery.getByTournamentId({
           tournamentId,
         });
-        const existingInstitutionsPromise =
-          this.institutionQuery.getByTournamentId({
-            tournamentId,
-          });
-        const existingBreakCategoryPromise =
-          this.breakCategoryQuery.getByTournamentId({
-            tournamentId,
-          });
-        const existingSpeakerCategoryPromise =
-          this.speakerCategoryQuery.getByTournamentId({
-            tournamentId,
-          });
-        const readService = new ReadFileService(origin, {
-          auth,
-          accessToken,
-        });
-        const data = yield* await readService.read();
+        const data = yield* await this.readFileService.read(
+          origin,
+          credentials,
+        );
         // Array of results (not vice versa)
         const parseRowResults = parseRawTable(data).map((rowResult) =>
           rowResult
@@ -95,31 +74,6 @@ export class CreateTeamImportSessionService {
           validTeamImports,
           await existingTeamsPromise,
         );
-        const necessaryInstitutions = [
-          ...checkResults
-            .flatMap(({ teamImport }) => [
-              teamImport.institution,
-              ...(teamImport.institutionConflicts ?? []),
-              ...(insertCompositeTeamInstitution
-                ? teamImport.speakers.map((spk) => spk.institution)
-                : []),
-            ])
-            .filter((institution) => institution !== null),
-        ];
-        const missingInstitutions = getMissingInstitutions(
-          necessaryInstitutions,
-          await existingInstitutionsPromise,
-        );
-        const missingBreakCategories = getMissingBreakCategories(
-          checkResults.flatMap(({ teamImport }) => teamImport.breakCategories),
-          await existingBreakCategoryPromise,
-        );
-        const missingSpeakerCategories = getMissingSpeakerCategories(
-          checkResults.flatMap(({ teamImport }) =>
-            teamImport.speakers.flatMap((spk) => spk.categories),
-          ),
-          await existingSpeakerCategoryPromise,
-        );
         let filteredIndex = 0;
         const rows = parseRowResults.map((rowResult, originalIndex) =>
           rowResult.match(
@@ -130,10 +84,7 @@ export class CreateTeamImportSessionService {
                 raw: data.data[originalIndex] ?? throwUnexpected_(),
                 success: true,
                 parsed: teamImport,
-                matched:
-                  checkResult.match.existing !== null
-                    ? TeamId.init(checkResult.match.existing)
-                    : null,
+                matched: checkResult.match,
                 updateNecessity: checkResult.updateNecessity,
                 duplication: serializeTeamDuplicationStatus(
                   checkResult.duplicateStatus,
@@ -158,11 +109,9 @@ export class CreateTeamImportSessionService {
           origin,
           headers: data.headers,
           rows,
-          missingInstitutions,
-          missingBreakCategories,
-          missingSpeakerCategories,
         });
-        return await this.importSessionRepository.save(importSession);
+        yield* await this.importSessionRepository.save(importSession);
+        return ok(importSession.id);
       }.bind(this),
     );
   }

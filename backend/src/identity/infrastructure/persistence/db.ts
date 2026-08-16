@@ -3,7 +3,7 @@ import { tournament } from './schema';
 import { Kysely } from 'kysely';
 import { organization } from './auth-schema';
 
-interface DbSchema {
+export interface DbSchema {
   organization: Kyselify<typeof organization>;
   tournament: Kyselify<typeof tournament>;
 }
