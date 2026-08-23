@@ -1,0 +1,5 @@
+reference,break_categories,institutions,speaker 1 name,speaker 1 email,speaker 1 categories,speaker 2 name,speaker 2 categories
+Team A,open,Institution A,Speaker A1,speakera1@example.com,open,Speaker A2,open
+Team B,"open, esl",,Speaker B1,speakerb1@example.com,"open, esl",Speaker B2,"open, esl"
+Team C,open,,Speaker C1,speakerc1@example.com,open,Speaker C2,open
+Team D,"open, esl",,Speaker D,speakerd1@example.com,"open, esl",Speaker D2,"open, esl"

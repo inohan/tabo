@@ -12,6 +12,7 @@ export interface DbSchema {
   adjudicator: Kyselify<typeof s.adjudicatorTable>;
   venue: Kyselify<typeof s.venueTable>;
   round: Kyselify<typeof s.roundTable>;
+  file: Kyselify<typeof s.fileTable>;
 }
 
 // export const db = new Kysely<DbSchema>({

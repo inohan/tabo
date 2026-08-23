@@ -26,6 +26,18 @@ export const tournamentTable = sharedSchema.table('tournament', {
   updatedAt: timestamp(),
 });
 
+export const fileTable = sharedSchema.table(
+  'file',
+  {
+    tournamentId: varchar().notNull(),
+    id: varchar().notNull(),
+    path: varchar().notNull(),
+    createdAt: timestamp().notNull(),
+    updatedAt: timestamp(),
+  },
+  (table) => [primaryKey({ columns: [table.tournamentId, table.id] })],
+);
+
 export const institutionTable = sharedSchema.table(
   'institution',
   {

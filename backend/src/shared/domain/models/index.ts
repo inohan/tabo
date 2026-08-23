@@ -8,3 +8,4 @@ export * from './speaker-category';
 export * from './team';
 export * from './tournament';
 export * from './venue';
+export * from './file';

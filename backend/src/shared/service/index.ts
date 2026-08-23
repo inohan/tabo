@@ -15,3 +15,4 @@ export * from './list-tournaments';
 export * from './verify-tournament';
 export * from './get-institution';
 export * from './list-institutions';
+export * from './get-file';

@@ -7,6 +7,7 @@ import { SpeakerRepositoryPort } from './speaker.repository';
 import { TeamRepositoryPort } from './team.repository';
 import { TournamentRepositoryPort } from './tournament.repository';
 import { SaveFailedError } from '../error';
+import { FileRepositoryPort } from './file.repository';
 
 export interface TransactionContext {
   tournamentRepository: TournamentRepositoryPort;
@@ -16,6 +17,7 @@ export interface TransactionContext {
   breakCategoryRepository: BreakCategoryRepositoryPort;
   speakerCategoryRepository: SpeakerCategoryRepositoryPort;
   adjudicatorRepository: AdjudicatorRepositoryPort;
+  fileRepository: FileRepositoryPort;
 }
 
 export abstract class UnitOfWorkPort {

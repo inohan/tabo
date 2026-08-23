@@ -5,4 +5,5 @@ export * from './speaker.repository';
 export * from './break-category.repository';
 export * from './speaker-category.repository';
 export * from './adjudicator.repository';
+export * from './file.repository';
 export * from './unit-of-work';

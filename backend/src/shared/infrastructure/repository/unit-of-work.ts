@@ -12,6 +12,7 @@ import { SpeakerRepository } from './speaker.repository';
 import { TeamRepository } from './team.repository';
 import { TournamentRepository } from './tournament.repository';
 import { SaveFailedError } from '@shared/domain';
+import { FileRepository } from './file.repository';
 
 export class UnitOfWork extends UnitOfWorkPort {
   constructor(private readonly db: Db) {
@@ -37,6 +38,7 @@ export class UnitOfWork extends UnitOfWorkPort {
         breakCategoryRepository: new BreakCategoryRepository(trx),
         speakerCategoryRepository: new SpeakerCategoryRepository(trx),
         adjudicatorRepository: new AdjudicatorRepository(trx),
+        fileRepository: new FileRepository(trx),
       });
       if (result.isErr()) {
         await trx.rollback().execute();

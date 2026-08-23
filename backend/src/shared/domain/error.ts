@@ -47,3 +47,8 @@ export class ParseFailedError<
     });
   }
 }
+
+export class FileError extends Error {
+  private __fileError!: void;
+  override name = 'FileError';
+}
