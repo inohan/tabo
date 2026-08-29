@@ -21,7 +21,7 @@ export class InstitutionRepository extends InstitutionRepositoryPort {
   }: {
     tournamentId: TournamentId;
     institutionId: InstitutionId;
-  }): Promise<Result<Institution, NotFoundError>> {
+  }) {
     const row = await this.db
       .selectFrom('institution')
       .selectAll()
@@ -29,11 +29,7 @@ export class InstitutionRepository extends InstitutionRepositoryPort {
       .where('id', '=', institutionId)
       .executeTakeFirst();
     if (!row) {
-      return err(
-        new NotFoundError(
-          `Institution ${institutionId} not found in tournament ${tournamentId}`,
-        ),
-      );
+      return ok(undefined);
     }
     return ok(toModel(row));
   }

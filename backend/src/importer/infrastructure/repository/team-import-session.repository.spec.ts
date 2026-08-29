@@ -133,9 +133,6 @@ describe('Importer DB', () => {
         id: 'test_csv',
       },
       headers: ['reference', 'institution', 'breakCategories'],
-      missingInstitutions: ['Institution A'],
-      missingBreakCategories: ['esl'],
-      missingSpeakerCategories: [],
       createdAt: timestamp,
       updatedAt: timestamp,
       status: 'incomplete',
@@ -149,7 +146,9 @@ describe('Importer DB', () => {
             reference: 'Team A',
             breakCategories: ['open', 'esl'],
           },
-          matched: null,
+          matched: {
+            existing: null,
+          },
           updateNecessity: {
             team: 'new',
           },

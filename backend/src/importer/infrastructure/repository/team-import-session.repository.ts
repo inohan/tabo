@@ -120,7 +120,7 @@ export class TeamImportSessionRepository extends TeamImportSessionRepositoryPort
   }: {
     tournamentId: TournamentId;
     importSessionId: TeamImportSessionId;
-  }): Promise<Result<TeamImportSession, NotFoundError>> {
+  }) {
     const importSession = await this.db
       .selectFrom('teamImportSession')
       .selectAll()
@@ -141,9 +141,7 @@ export class TeamImportSessionRepository extends TeamImportSessionRepositoryPort
       .where('sessionId', '=', importSessionId)
       .executeTakeFirst();
     if (importSession === undefined) {
-      return err(
-        new NotFoundError(`Team import session ${importSessionId} not found.`),
-      );
+      return ok(undefined);
     }
     return ok(toSessionModel(importSession));
   }

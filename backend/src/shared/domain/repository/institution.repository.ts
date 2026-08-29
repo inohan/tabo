@@ -1,12 +1,12 @@
 import { Institution, InstitutionId, TournamentId } from '../models';
 import { Result } from 'neverthrow';
-import { NotFoundError, SaveFailedError } from '../error';
+import { SaveFailedError } from '../error';
 
 export abstract class InstitutionRepositoryPort {
   abstract get(id: {
     tournamentId: TournamentId;
     institutionId: InstitutionId;
-  }): Promise<Result<Institution, NotFoundError>>;
+  }): Promise<Result<Institution | undefined, never>>;
   abstract getByTournament(
     tournamentId: TournamentId,
   ): Promise<Result<Institution[], never>>;

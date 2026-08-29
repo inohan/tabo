@@ -9,7 +9,7 @@ export abstract class AdjudicatorImportSessionRepositoryPort {
   abstract get(input: {
     tournamentId: TournamentId;
     importSessionId: AdjudicatorImportSessionId;
-  }): Promise<Result<AdjudicatorImportSession, NotFoundError>>;
+  }): Promise<Result<AdjudicatorImportSession | undefined, never>>;
 
   abstract getByTournament(id: {
     tournamentId: TournamentId;

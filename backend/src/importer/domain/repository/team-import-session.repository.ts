@@ -6,7 +6,7 @@ export abstract class TeamImportSessionRepositoryPort {
   abstract get(input: {
     tournamentId: TournamentId;
     importSessionId: TeamImportSessionId;
-  }): Promise<Result<TeamImportSession, NotFoundError>>;
+  }): Promise<Result<TeamImportSession | undefined, never>>;
 
   abstract getByTournament(id: {
     tournamentId: TournamentId;

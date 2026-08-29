@@ -125,7 +125,7 @@ export class AdjudicatorImportSessionRepository extends AdjudicatorImportSession
   }: {
     tournamentId: TournamentId;
     importSessionId: AdjudicatorImportSessionId;
-  }): Promise<Result<AdjudicatorImportSession, NotFoundError>> {
+  }) {
     const importSession = await this.db
       .selectFrom('adjudicatorImportSession')
       .selectAll()
@@ -146,11 +146,7 @@ export class AdjudicatorImportSessionRepository extends AdjudicatorImportSession
       .where('sessionId', '=', importSessionId)
       .executeTakeFirst();
     if (importSession === undefined) {
-      return err(
-        new NotFoundError(
-          `Adjudicator import session ${importSessionId} not found.`,
-        ),
-      );
+      return ok(undefined);
     }
     return ok(toSessionModel(importSession));
   }

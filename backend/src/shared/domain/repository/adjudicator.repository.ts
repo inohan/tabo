@@ -6,7 +6,7 @@ export abstract class AdjudicatorRepositoryPort {
   abstract get(id: {
     tournamentId: TournamentId;
     adjudicatorId: AdjudicatorId;
-  }): Promise<Result<Adjudicator, NotFoundError>>;
+  }): Promise<Result<Adjudicator | undefined, never>>;
   abstract getByTournament(
     tournamentId: TournamentId,
   ): Promise<Result<Adjudicator[], never>>;

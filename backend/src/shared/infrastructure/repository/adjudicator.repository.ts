@@ -23,7 +23,7 @@ export class AdjudicatorRepository extends AdjudicatorRepositoryPort {
   }: {
     tournamentId: TournamentId;
     adjudicatorId: AdjudicatorId;
-  }): Promise<Result<Adjudicator, NotFoundError>> {
+  }) {
     const adjudicator = await this.db
       .selectFrom('adjudicator')
       .selectAll()
@@ -31,11 +31,7 @@ export class AdjudicatorRepository extends AdjudicatorRepositoryPort {
       .where('id', '=', adjudicatorId)
       .executeTakeFirst();
     if (adjudicator === undefined) {
-      return err(
-        new NotFoundError(
-          `Adjudicator ${adjudicatorId} not found in tournament ${tournamentId}`,
-        ),
-      );
+      return ok(undefined);
     }
     return ok(toModel(adjudicator));
   }

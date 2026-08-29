@@ -6,7 +6,7 @@ export abstract class BreakCategoryRepositoryPort {
   abstract get(id: {
     tournamentId: TournamentId;
     breakCategoryId: BreakCategoryId;
-  }): Promise<Result<BreakCategory, NotFoundError>>;
+  }): Promise<Result<BreakCategory | undefined, never>>;
   abstract getByTournament(
     tournamentId: TournamentId,
   ): Promise<Result<BreakCategory[], never>>;

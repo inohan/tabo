@@ -14,18 +14,14 @@ export class TournamentRepository extends TournamentRepositoryPort {
     super();
   }
 
-  async get(
-    tournamentId: TournamentId,
-  ): Promise<Result<Tournament, NotFoundError>> {
+  async get(tournamentId: TournamentId) {
     const tournament = await this.db
       .selectFrom('tournament')
       .selectAll()
       .where('tournamentId', '=', tournamentId)
       .executeTakeFirst();
     if (tournament === undefined) {
-      return err(
-        new NotFoundError(`Tournament with id ${tournamentId} not found`),
-      );
+      return ok(undefined);
     }
     return ok(toModel(tournament));
   }

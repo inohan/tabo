@@ -21,7 +21,7 @@ export class SpeakerCategoryRepository extends SpeakerCategoryRepositoryPort {
   }: {
     tournamentId: TournamentId;
     speakerCategoryId: SpeakerCategoryId;
-  }): Promise<Result<SpeakerCategory, NotFoundError>> {
+  }) {
     const row = await this.db
       .selectFrom('speakerCategory')
       .selectAll()
@@ -29,11 +29,7 @@ export class SpeakerCategoryRepository extends SpeakerCategoryRepositoryPort {
       .where('id', '=', speakerCategoryId)
       .executeTakeFirst();
     if (!row) {
-      return err(
-        new NotFoundError(
-          `Speaker category ${speakerCategoryId} not found in tournament ${tournamentId}`,
-        ),
-      );
+      return ok(undefined);
     }
     return ok(toModel(row));
   }

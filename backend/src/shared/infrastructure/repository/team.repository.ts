@@ -24,7 +24,7 @@ export class TeamRepository extends TeamRepositoryPort {
   }: {
     tournamentId: TournamentId;
     teamId: TeamId;
-  }): Promise<Result<Team, NotFoundError>> {
+  }) {
     const team = await this.db
       .selectFrom('team')
       .select((eb) => [
@@ -50,11 +50,7 @@ export class TeamRepository extends TeamRepositoryPort {
       .where('id', '=', teamId)
       .executeTakeFirst();
     if (team === undefined) {
-      return err(
-        new NotFoundError(
-          `Team ${teamId} not found in tournament ${tournamentId}`,
-        ),
-      );
+      return ok(undefined);
     }
     return ok(toModel(team));
   }

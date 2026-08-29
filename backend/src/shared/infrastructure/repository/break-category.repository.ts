@@ -21,19 +21,15 @@ export class BreakCategoryRepository extends BreakCategoryRepositoryPort {
   }: {
     tournamentId: TournamentId;
     breakCategoryId: BreakCategoryId;
-  }): Promise<Result<BreakCategory, NotFoundError>> {
+  }) {
     const row = await this.db
       .selectFrom('breakCategory')
       .selectAll()
       .where('tournamentId', '=', tournamentId)
       .where('id', '=', breakCategoryId)
       .executeTakeFirst();
-    if (!row) {
-      return err(
-        new NotFoundError(
-          `Break category ${breakCategoryId} not found in tournament ${tournamentId}`,
-        ),
-      );
+    if (row === undefined) {
+      return ok(undefined);
     }
     return ok(toModel(row));
   }

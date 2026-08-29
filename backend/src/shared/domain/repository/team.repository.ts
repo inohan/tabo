@@ -6,7 +6,7 @@ export abstract class TeamRepositoryPort {
   abstract get(id: {
     tournamentId: TournamentId;
     teamId: TeamId;
-  }): Promise<Result<Team, NotFoundError>>;
+  }): Promise<Result<Team | undefined, never>>;
   abstract getByTournament(
     tournamentId: TournamentId,
   ): Promise<Result<Team[], never>>;

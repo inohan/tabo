@@ -23,10 +23,7 @@ export class FileRepository extends FileRepositoryPort {
     });
   }
 
-  async get(id: {
-    tournamentId: TournamentId;
-    fileId: FileId;
-  }): Promise<Result<File, NotFoundError>> {
+  async get(id: { tournamentId: TournamentId; fileId: FileId }) {
     const row = await this.db
       .selectFrom('file')
       .selectAll()
@@ -34,11 +31,7 @@ export class FileRepository extends FileRepositoryPort {
       .where('id', '=', id.fileId)
       .executeTakeFirst();
     if (row === undefined) {
-      return err(
-        new NotFoundError(
-          `File ${id.fileId} not found in tournament ${id.tournamentId}`,
-        ),
-      );
+      return ok(undefined);
     }
     return ok(this.toModel(row));
   }
