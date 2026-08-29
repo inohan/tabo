@@ -103,7 +103,7 @@ describe('cell types', () => {
     const sheet = (await openFixture()).getSheet('table_types');
     expect(sheet!.getRange('A5:C6')).toEqual([
       ['日本語', null, null],
-      [null, null, null],
+      [0, null, null],
     ]);
   });
 });

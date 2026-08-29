@@ -2,7 +2,7 @@ import { TournamentId } from '@shared/domain';
 import {
   TournamentDto,
   TournamentQuery,
-} from '../infrastructure/query/tournament.query';
+} from '../../infrastructure/query/tournament.query';
 import { ok, Result } from 'neverthrow';
 
 export class ListTournamentsService {

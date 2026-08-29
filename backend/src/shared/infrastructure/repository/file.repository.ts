@@ -1,12 +1,6 @@
 import { FileRepositoryPort } from '@shared/domain/repository';
 import { Db, DbSchema } from '../persistence/db';
-import {
-  TournamentId,
-  FileId,
-  File,
-  NotFoundError,
-  SaveFailedError,
-} from '@shared/domain';
+import { TournamentId, FileId, File, SaveFailedError } from '@shared/domain';
 import { err, ok, Result } from 'neverthrow';
 import { Selectable } from 'kysely';
 

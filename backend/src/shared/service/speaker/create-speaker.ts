@@ -1,10 +1,15 @@
 import { PickUnbranded } from 'src/lib/brand';
-import { ClientFactoryPort, SpeakerDTO } from '../clients/tabbycat';
-import { PartialFailedError, Speaker, TournamentId } from '../domain';
+import { ClientFactoryPort, SpeakerDTO } from '../../clients/tabbycat';
+import {
+  NotFoundError,
+  PartialFailedError,
+  Speaker,
+  TournamentId,
+} from '../../domain';
 import {
   SpeakerRepositoryPort,
   TournamentRepositoryPort,
-} from '../domain/repository';
+} from '../../domain/repository';
 import { safeTry, ok, err } from 'neverthrow';
 import { throw_ } from 'src/lib/throw';
 
@@ -28,11 +33,14 @@ export class CreateSpeakerService {
   ) {
     return safeTry(
       async function* (this: CreateSpeakerService) {
-        const {
-          baseUrl,
-          token,
-          slug: tournamentSlug,
-        } = yield* await this.tournamentRepository.get(tournamentId);
+        const tournament =
+          yield* await this.tournamentRepository.get(tournamentId);
+        if (tournament === undefined) {
+          return err(
+            new NotFoundError(`Tournament ${tournamentId} does not exist`),
+          );
+        }
+        const { baseUrl, token, slug: tournamentSlug } = tournament;
         const tcClient = this.tabbycatClientFactory({
           baseUrl,
           token,
@@ -65,11 +73,14 @@ export class CreateSpeakerService {
   ) {
     return safeTry(
       async function* (this: CreateSpeakerService) {
-        const {
-          baseUrl,
-          token,
-          slug: tournamentSlug,
-        } = yield* await this.tournamentRepository.get(tournamentId);
+        const tournament =
+          yield* await this.tournamentRepository.get(tournamentId);
+        if (tournament === undefined) {
+          return err(
+            new NotFoundError(`Tournament ${tournamentId} does not exist`),
+          );
+        }
+        const { baseUrl, token, slug: tournamentSlug } = tournament;
         const tcClient = this.tabbycatClientFactory({
           baseUrl,
           token,

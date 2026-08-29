@@ -3,6 +3,22 @@ import { err, ok } from 'neverthrow';
 import { XlsxWorkbook, XlsxFormatError } from './xlsx';
 
 export class ExcelClient {
+  async open(input: Uint8Array) {
+    try {
+      const wb = await XlsxWorkbook.open(input);
+      return ok(wb);
+    } catch (e) {
+      if (e instanceof XlsxFormatError) {
+        return err(
+          new FileError(`Failed to read excel file: ${e.message}`, {
+            cause: e,
+          }),
+        );
+      }
+      throw e;
+    }
+  }
+
   async getTables(input: Uint8Array) {
     try {
       const wb = await XlsxWorkbook.open(input);

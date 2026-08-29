@@ -1,7 +1,7 @@
-import { BlobClientPort } from '@shared/clients/blob';
-import { FileId, TournamentId } from '@shared/domain';
-import { FileRepositoryPort } from '@shared/domain/repository';
-import { safeTry } from 'neverthrow';
+import { BlobClientPort } from '../../clients/blob';
+import { FileId, NotFoundError, TournamentId } from '../../domain';
+import { FileRepositoryPort } from '../../domain/repository';
+import { err, safeTry } from 'neverthrow';
 
 export class GetFileService {
   constructor(
@@ -20,6 +20,13 @@ export class GetFileService {
           tournamentId,
           fileId,
         });
+        if (file === undefined) {
+          return err(
+            new NotFoundError(
+              `File ${fileId} does not exist in tournament ${tournamentId}`,
+            ),
+          );
+        }
         return this.blobClient.getBlob(file.path);
       }.bind(this),
     );

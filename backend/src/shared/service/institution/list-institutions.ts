@@ -1,5 +1,5 @@
-import { TournamentId } from '../domain';
-import { InstitutionDto, InstitutionQuery } from '../infrastructure/query';
+import { TournamentId } from '../../domain';
+import { InstitutionDto, InstitutionQuery } from '../../infrastructure/query';
 import { ok, Result } from 'neverthrow';
 
 export class ListInstitutionsService {

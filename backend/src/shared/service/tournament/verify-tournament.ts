@@ -2,8 +2,8 @@ import {
   ClientFactoryPort,
   ClientPort,
   TabbycatError,
-} from '../clients/tabbycat';
-import { TabbycatResponseError } from '../clients/tabbycat/error';
+} from '../../clients/tabbycat';
+import { TabbycatResponseError } from '../../clients/tabbycat/error';
 import { matchOrUndefined } from '@shared/clients/tabbycat/url-parse';
 import { NotFoundError } from '@shared/domain';
 import { err, ok, Result, ResultAsync, safeTry } from 'neverthrow';

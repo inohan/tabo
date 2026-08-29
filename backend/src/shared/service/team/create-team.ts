@@ -1,14 +1,18 @@
 import { PickUnbranded } from 'src/lib/brand';
-import { ClientFactoryPort, TeamDTO } from '../clients/tabbycat';
+import { ClientFactoryPort, TeamDTO } from '../../clients/tabbycat';
 import {
   InstitutionId,
+  NotFoundError,
   PartialFailedError,
   SaveFailedError,
   Speaker,
   Team,
   TournamentId,
-} from '../domain';
-import { TournamentRepositoryPort, UnitOfWorkPort } from '../domain/repository';
+} from '../../domain';
+import {
+  TournamentRepositoryPort,
+  UnitOfWorkPort,
+} from '../../domain/repository';
 import { safeTry, ok, err } from 'neverthrow';
 import { throw_ } from 'src/lib/throw';
 
@@ -34,11 +38,14 @@ export class CreateTeamService {
   ) {
     return safeTry(
       async function* (this: CreateTeamService) {
-        const {
-          baseUrl,
-          token,
-          slug: tournamentSlug,
-        } = yield* await this.tournamentRepository.get(tournamentId);
+        const tournament =
+          yield* await this.tournamentRepository.get(tournamentId);
+        if (tournament === undefined) {
+          return err(
+            new NotFoundError(`Tournament ${tournamentId} does not exist`),
+          );
+        }
+        const { baseUrl, token, slug: tournamentSlug } = tournament;
         const tcClient = this.tabbycatClientFactory({
           baseUrl,
           token,
@@ -74,11 +81,14 @@ export class CreateTeamService {
   ) {
     return safeTry(
       async function* (this: CreateTeamService) {
-        const {
-          baseUrl,
-          token,
-          slug: tournamentSlug,
-        } = yield* await this.tournamentRepository.get(tournamentId);
+        const tournament =
+          yield* await this.tournamentRepository.get(tournamentId);
+        if (tournament === undefined) {
+          return err(
+            new NotFoundError(`Tournament ${tournamentId} does not exist`),
+          );
+        }
+        const { baseUrl, token, slug: tournamentSlug } = tournament;
         const tcClient = this.tabbycatClientFactory({
           baseUrl,
           token,

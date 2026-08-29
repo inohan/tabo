@@ -1,10 +1,15 @@
 import { PickUnbranded } from 'src/lib/brand';
-import { ClientFactoryPort, SpeakerCategoryDTO } from '../clients/tabbycat';
-import { PartialFailedError, SpeakerCategory, TournamentId } from '../domain';
+import { ClientFactoryPort, SpeakerCategoryDTO } from '../../clients/tabbycat';
+import {
+  NotFoundError,
+  PartialFailedError,
+  SpeakerCategory,
+  TournamentId,
+} from '../../domain';
 import {
   SpeakerCategoryRepositoryPort,
   TournamentRepositoryPort,
-} from '../domain/repository';
+} from '../../domain/repository';
 import { safeTry, ok, err } from 'neverthrow';
 import { throw_ } from 'src/lib/throw';
 
@@ -25,11 +30,14 @@ export class CreateSpeakerCategoryService {
   ) {
     return safeTry(
       async function* (this: CreateSpeakerCategoryService) {
-        const {
-          baseUrl,
-          token,
-          slug: tournamentSlug,
-        } = yield* await this.tournamentRepository.get(tournamentId);
+        const tournament =
+          yield* await this.tournamentRepository.get(tournamentId);
+        if (tournament === undefined) {
+          return err(
+            new NotFoundError(`Tournament ${tournamentId} does not exist`),
+          );
+        }
+        const { baseUrl, token, slug: tournamentSlug } = tournament;
         const tcClient = this.tabbycatClientFactory({
           baseUrl,
           token,
@@ -61,11 +69,14 @@ export class CreateSpeakerCategoryService {
   ) {
     return safeTry(
       async function* (this: CreateSpeakerCategoryService) {
-        const {
-          baseUrl,
-          token,
-          slug: tournamentSlug,
-        } = yield* await this.tournamentRepository.get(tournamentId);
+        const tournament =
+          yield* await this.tournamentRepository.get(tournamentId);
+        if (tournament === undefined) {
+          return err(
+            new NotFoundError(`Tournament ${tournamentId} does not exist`),
+          );
+        }
+        const { baseUrl, token, slug: tournamentSlug } = tournament;
         const tcClient = this.tabbycatClientFactory({
           baseUrl,
           token,

@@ -18,3 +18,8 @@ export class TeamImportFailedError extends Error {
     );
   }
 }
+
+export class InvalidImportSessionStateError extends Error {
+  override name = 'InvalidImportSessionStateError';
+  private __InvalidImportSessionStateError!: void;
+}

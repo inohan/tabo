@@ -2,7 +2,7 @@ import { NotFoundError, TournamentId } from '@shared/domain';
 import {
   TournamentDto,
   TournamentQuery,
-} from '../infrastructure/query/tournament.query';
+} from '../../infrastructure/query/tournament.query';
 import { Result, err, ok } from 'neverthrow';
 
 export class GetTournamentService {

@@ -3,7 +3,7 @@ import { Result } from 'neverthrow';
 
 export abstract class BlobClientPort {
   abstract issueUploadUrl(
-    id: string,
+    key: string,
     options?: {
       mimeType?: string;
       expiresIn?: number;

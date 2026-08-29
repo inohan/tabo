@@ -5,7 +5,6 @@ import {
   Institution,
   InstitutionId,
   TournamentId,
-  NotFoundError,
   SaveFailedError,
 } from 'src/shared/domain';
 import { Selectable } from 'kysely';

@@ -29,7 +29,7 @@ export class S3BlobClient extends BlobClientPort {
   }
 
   async issueUploadUrl(
-    id: string,
+    key: string,
     options?: { mimeType?: string; expiresIn?: number },
   ): Promise<Result<string, never>> {
     const expiresIn = options?.expiresIn ?? DEFAULT_EXPIRES_IN;
@@ -40,7 +40,7 @@ export class S3BlobClient extends BlobClientPort {
     }
     const command = new PutObjectCommand({
       Bucket: this.bucket,
-      Key: id,
+      Key: key,
       ContentType: options?.mimeType,
     });
     return ok(await getSignedUrl(this.client, command, { expiresIn }));

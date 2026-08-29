@@ -8,6 +8,7 @@ export type FileId = Branded<string, typeof fileIdSymbol>;
 
 export const FileId = {
   ...Struct<FileId>(),
+  create: (): FileId => FileId.init(crypto.randomUUID()),
 };
 
 export type File = Branded<
@@ -21,4 +22,13 @@ export type File = Branded<
 
 export const File = {
   ...Struct<File>(),
+
+  create: ({ tournamentId }: { tournamentId: TournamentId }) => {
+    const fileId = FileId.create();
+    return File.init({
+      tournamentId,
+      id: fileId,
+      path: `${tournamentId}/${fileId}`,
+    });
+  },
 };

@@ -1,6 +1,6 @@
 import { err, ok, Result } from 'neverthrow';
-import { InstitutionId, NotFoundError, TournamentId } from '../domain';
-import { InstitutionQuery, InstitutionDto } from '../infrastructure/query';
+import { InstitutionId, NotFoundError, TournamentId } from '../../domain';
+import { InstitutionQuery, InstitutionDto } from '../../infrastructure/query';
 
 export class GetInstitutionService {
   constructor(private institutionQuery: InstitutionQuery) {}

@@ -1,5 +1,5 @@
-import { ok, ResultAsync, safeTry } from 'neverthrow';
-import { ClientFactoryPort, TabbycatError } from '../clients/tabbycat';
+import { err, ok, safeTry } from 'neverthrow';
+import { ClientFactoryPort } from '../../clients/tabbycat';
 import {
   NotFoundError,
   SaveFailedError,
@@ -8,8 +8,11 @@ import {
   Team,
   TeamId,
   TournamentId,
-} from '../domain';
-import { TournamentRepositoryPort, UnitOfWorkPort } from '../domain/repository';
+} from '../../domain';
+import {
+  TournamentRepositoryPort,
+  UnitOfWorkPort,
+} from '../../domain/repository';
 
 export class SyncTeamsService {
   constructor(
@@ -18,16 +21,17 @@ export class SyncTeamsService {
     private readonly tabbycatClientFactory: ClientFactoryPort,
   ) {}
 
-  execute(
-    tournamentId: TournamentId,
-  ): ResultAsync<void, NotFoundError | TabbycatError | SaveFailedError> {
+  execute(tournamentId: TournamentId) {
     return safeTry(
       async function* (this: SyncTeamsService) {
-        const {
-          baseUrl,
-          token,
-          slug: tournamentSlug,
-        } = yield* await this.tournamentRepository.get(tournamentId);
+        const tournament =
+          yield* await this.tournamentRepository.get(tournamentId);
+        if (tournament === undefined) {
+          return err(
+            new NotFoundError(`Tournament ${tournamentId} does not exist`),
+          );
+        }
+        const { baseUrl, token, slug: tournamentSlug } = tournament;
         const tcClient = this.tabbycatClientFactory({
           baseUrl,
           token,
