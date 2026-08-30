@@ -1,6 +1,6 @@
 import { GoogleSheetsClient } from '../clients/google-sheet';
-import { CellValue, ImportOrigin, TableValue } from '../domain/values';
-import { match, P } from 'ts-pattern';
+import { ImportOrigin, TableValue } from '../domain/values';
+import { match } from 'ts-pattern';
 import { err, ok, safeTry } from 'neverthrow';
 import {
   AuthError,
@@ -21,6 +21,7 @@ export class ReadImportOriginService {
     private getFileService: GetFileService,
     private csvClient: CsvClient,
     private excelClient: ExcelClient,
+    private googleSheetsClient: GoogleSheetsClient,
   ) {}
 
   async read(
@@ -32,26 +33,17 @@ export class ReadImportOriginService {
       async function* (this: ReadImportOriginService) {
         const tableData = yield* await match(origin)
           .with({ type: 'google-sheets' }, async (origin) => {
-            const auth = match(credentials)
-              .with(
-                { type: 'google', accessToken: P.string },
-                (credentials) => {
-                  const auth = new google.auth.OAuth2();
-                  auth.setCredentials({
-                    access_token: credentials.accessToken,
-                  });
-                  return auth;
-                },
-              )
-              .with({ type: 'google', auth: P.nonNullable }, ({ auth }) => auth)
-              .otherwise(() => undefined);
-            if (!auth) {
+            if (credentials.type !== 'google') {
               return err(new AuthError('Auth for google not provided'));
             }
-            const sheetsClient = new GoogleSheetsClient(auth);
-            return sheetsClient.readTable({
+            const auth = new google.auth.OAuth2();
+            auth.setCredentials({
+              access_token: credentials.accessToken,
+            });
+            return this.googleSheetsClient.readTable({
               spreadsheetId: origin.id,
               tableId: origin.tableId,
+              auth,
             });
           })
           .with(

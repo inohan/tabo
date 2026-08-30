@@ -8,8 +8,11 @@ import { CamelCasePlugin, Kysely, PostgresDialect } from 'kysely';
 import { Pool } from 'pg';
 import { buildProvider } from '../lib/provider';
 import { GetProviderAccessTokenService } from '@identity/service/get-access-token';
+import { auth, IdentityAuth } from '@identity/infrastructure/persistence/auth';
+import { auth as testAuth } from '@identity/infrastructure/persistence/auth.test';
 
 export const IDENTITY_DB = Symbol('IDENTITY_DB');
+export const IDENTITY_AUTH = Symbol('IDENTITY_AUTH');
 const identityProviders = buildProvider()
   .provide({
     provide: IDENTITY_DB,
@@ -25,9 +28,19 @@ const identityProviders = buildProvider()
         plugins: [new CamelCasePlugin()],
       }),
   })
+  .provide({
+    provide: IDENTITY_AUTH,
+    useFactory: (): IdentityAuth => {
+      if (process.env.NODE_ENV === 'production') {
+        return auth;
+      } else {
+        return testAuth as unknown as IdentityAuth;
+      }
+    },
+  })
   .provideClass(ListOrganizationTournamentService, [IDENTITY_DB])
   .provideClass(AddOrganizationTournamentService, [IDENTITY_DB])
-  .provideClass(GetProviderAccessTokenService, [IDENTITY_DB]);
+  .provideClass(GetProviderAccessTokenService, [IDENTITY_AUTH]);
 
 export const exportedIdentityProviders = identityProviders.pick([
   ListOrganizationTournamentService,

@@ -1,8 +1,9 @@
 import { GoogleSheetsClient } from '@importer/clients/google-sheet';
-import { ImportOriginSource } from '@importer/domain/values';
+import { ImportCredentials, ImportOriginSource } from '@importer/domain/values';
 import { ExcelClient } from '@shared/clients/excel';
-import { FileError, FileId, TournamentId } from '@shared/domain';
+import { AuthError, FileError, FileId, TournamentId } from '@shared/domain';
 import { GetFileService } from '@shared/service';
+import { google } from 'googleapis';
 import { err, ok, safeTry } from 'neverthrow';
 
 export class GetImportOriginCandidateService {
@@ -12,7 +13,15 @@ export class GetImportOriginCandidateService {
     private googleSheetClient: GoogleSheetsClient,
   ) {}
 
-  async execute(tournamentId: TournamentId, fileSource: ImportOriginSource) {
+  async execute({
+    tournamentId,
+    fileSource,
+    credentials,
+  }: {
+    tournamentId: TournamentId;
+    fileSource: ImportOriginSource;
+    credentials: ImportCredentials;
+  }) {
     return await safeTry(
       async function* (this: GetImportOriginCandidateService) {
         // Using match is inefficient in a multi-switch environment, as passing `this` is a nuisance.
@@ -45,9 +54,17 @@ export class GetImportOriginCandidateService {
             }
           }
           case 'google': {
-            const metadata = yield* await this.googleSheetClient.getMetaData(
-              fileSource.id,
-            );
+            if (credentials.type !== 'google') {
+              return err(new AuthError('Auth for google not provided'));
+            }
+            const auth = new google.auth.OAuth2();
+            auth.setCredentials({
+              access_token: credentials.accessToken,
+            });
+            const metadata = yield* await this.googleSheetClient.getMetaData({
+              spreadsheetId: fileSource.id,
+              auth,
+            });
             const tables = metadata.sheets.flatMap((sheet, sheetIndex) =>
               sheet.tables.map((table) => ({
                 id: table.tableId,

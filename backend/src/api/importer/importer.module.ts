@@ -1,9 +1,5 @@
 import { Module } from '@nestjs/common';
-import {
-  SharedModule,
-  sharedProvidersExported,
-  TABBYCAT_CLIENT_FACTORY,
-} from '../shared/shared.module';
+import { SharedModule, sharedProvidersExported } from '../shared/shared.module';
 import { TeamImportController } from './team/team.controller';
 import { AdjudicatorController } from './adjudicator/adjudicator.controller';
 import { CamelCasePlugin, Kysely, PostgresDialect } from 'kysely';
@@ -14,10 +10,12 @@ import {
   TeamImportSessionRepositoryPort,
 } from '@importer/domain/repository';
 import { TeamImportSessionRepository } from '@importer/infrastructure/repository';
-import { AdjudicatorImportSessionRepository } from '@importer/infrastructure/repository/adjudicator-import-session.repository';
+import { AdjudicatorImportSessionRepository } from '@importer/infrastructure/repository';
 import {
   CreateTeamImportSessionService,
   ExecuteTeamImportService,
+  GetImportOriginCandidateService,
+  SetTeamDoImportStatusService,
 } from '@importer/service';
 import {
   BreakCategoryQuery,
@@ -26,17 +24,22 @@ import {
   TeamQuery,
 } from '@shared/infrastructure/query';
 import { buildProvider } from '../lib/provider';
-import { ReadFileService } from '@importer/service/read-file';
-import { IdentityModule } from '../identity/identity.module';
 import {
-  BreakCategoryRepositoryPort,
-  InstitutionRepositoryPort,
-  SpeakerCategoryRepositoryPort,
-  TournamentRepositoryPort,
-  UnitOfWorkPort,
-} from '@shared/domain/repository';
-import { GetTeamImportSessionService } from '@importer/service/get-team-import';
-import { TeamImportSessionQuery } from '@importer/infrastructure/query/team-import-session.query';
+  ReadImportOriginService,
+  GetTeamImportSessionService,
+} from '@importer/service';
+import { IdentityModule } from '../identity/identity.module';
+import { TeamImportSessionQuery } from '@importer/infrastructure/query';
+import {
+  CreateBreakCategoryService,
+  CreateInstitutionService,
+  CreateSpeakerCategoryService,
+  CreateTeamService,
+  GetFileService,
+} from '@shared/service';
+import { ExcelClient } from '@shared/clients/excel';
+import { CsvClient } from '@shared/clients/csv';
+import { GoogleSheetsClient } from '@importer/clients/google-sheet';
 
 const IMPORTER_DB = Symbol('IMPORTER_DB');
 
@@ -67,33 +70,42 @@ const importerProviders = buildProvider()
     [IMPORTER_DB],
   )
   .provideClass(TeamImportSessionQuery, [IMPORTER_DB, TeamQuery])
-  .provideClass(ReadFileService, [])
+  .provideClass(ReadImportOriginService, [
+    GetFileService,
+    CsvClient,
+    ExcelClient,
+    GoogleSheetsClient,
+  ])
+  .provideClass(GetImportOriginCandidateService, [
+    GetFileService,
+    ExcelClient,
+    GoogleSheetsClient,
+  ])
   .provideClass(GetTeamImportSessionService, [TeamImportSessionQuery])
   .provideClass(CreateTeamImportSessionService, [
     TeamImportSessionRepositoryPort,
     TeamQuery,
-    InstitutionQuery,
-    BreakCategoryQuery,
-    SpeakerCategoryQuery,
-    ReadFileService,
+    ReadImportOriginService,
   ])
   .provideClass(ExecuteTeamImportService, [
     TeamImportSessionRepositoryPort,
-    TournamentRepositoryPort,
-    InstitutionRepositoryPort,
     InstitutionQuery,
-    BreakCategoryRepositoryPort,
     BreakCategoryQuery,
-    SpeakerCategoryRepositoryPort,
     SpeakerCategoryQuery,
-    UnitOfWorkPort,
-    TABBYCAT_CLIENT_FACTORY,
+    CreateInstitutionService,
+    CreateBreakCategoryService,
+    CreateSpeakerCategoryService,
+    CreateTeamService,
+  ])
+  .provideClass(SetTeamDoImportStatusService, [
+    TeamImportSessionRepositoryPort,
   ]);
 
 export const exportedImporterProviders = importerProviders.pick([
-  ReadFileService,
-  GetTeamImportSessionService,
+  ReadImportOriginService,
   CreateTeamImportSessionService,
+  GetTeamImportSessionService,
+  SetTeamDoImportStatusService,
   ExecuteTeamImportService,
 ]);
 

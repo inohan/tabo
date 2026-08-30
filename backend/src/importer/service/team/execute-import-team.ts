@@ -1,4 +1,7 @@
-import { TeamImportFailedError } from '@importer/domain/error';
+import {
+  InvalidImportSessionStateError,
+  TeamImportFailedError,
+} from '@importer/domain/error';
 import {
   TeamImportSession,
   TeamImportSessionId,
@@ -10,21 +13,14 @@ import {
   getMissingSpeakerCategories,
 } from '@importer/domain/service/checker';
 import { TeamImportSessionFailedMissingEntities } from '@importer/domain/values';
-import { ClientFactoryPort } from '@shared/clients/tabbycat';
 import {
   BreakCategoryId,
   InstitutionId,
+  NotFoundError,
   PartialFailedError,
   SpeakerCategoryId,
   TournamentId,
 } from '@shared/domain';
-import {
-  BreakCategoryRepositoryPort,
-  InstitutionRepositoryPort,
-  SpeakerCategoryRepositoryPort,
-  TournamentRepositoryPort,
-  UnitOfWorkPort,
-} from '@shared/domain/repository';
 import {
   BreakCategoryQuery,
   InstitutionQuery,
@@ -43,15 +39,13 @@ import { match, P } from 'ts-pattern';
 export class ExecuteTeamImportService {
   constructor(
     private teamImportSessionRepository: TeamImportSessionRepositoryPort,
-    private tournamentRepository: TournamentRepositoryPort,
-    private institutionRepository: InstitutionRepositoryPort,
     private institutionQuery: InstitutionQuery,
-    private breakCategoryRepository: BreakCategoryRepositoryPort,
     private breakCategoryQuery: BreakCategoryQuery,
-    private speakerCategoryRepository: SpeakerCategoryRepositoryPort,
     private speakerCategoryQuery: SpeakerCategoryQuery,
-    private unitOfWork: UnitOfWorkPort,
-    private tabbycatClientFactory: ClientFactoryPort,
+    private createInstitutionService: CreateInstitutionService,
+    private createBreakCategoryService: CreateBreakCategoryService,
+    private createSpeakerCategoryService: CreateSpeakerCategoryService,
+    private createTeamService: CreateTeamService,
   ) {}
 
   async getMissingEntities(
@@ -77,6 +71,13 @@ export class ExecuteTeamImportService {
         const importSession = yield* await this.teamImportSessionRepository.get(
           { tournamentId, importSessionId },
         );
+        if (importSession === undefined) {
+          return yield* err(
+            new NotFoundError(
+              `Team import session ${importSessionId} does not exist.`,
+            ),
+          );
+        }
         const [
           existingInstitutions,
           existingBreakCategories,
@@ -141,32 +142,31 @@ export class ExecuteTeamImportService {
             importSessionId,
           },
         );
+        if (importSession === undefined) {
+          return yield* err(
+            new NotFoundError(
+              `Team import session ${importSessionId} does not exist.`,
+            ),
+          );
+        }
+        if (importSession.status !== 'incomplete') {
+          return yield* err(
+            new InvalidImportSessionStateError(
+              `Cannot re-import a already-imported session.`,
+            ),
+          );
+        }
         const missingEntities = yield* await this.getMissingEntities({
           tournamentId,
           importSessionId,
         });
-        const createInstitutionService = new CreateInstitutionService(
-          this.tournamentRepository,
-          this.institutionRepository,
-          this.tabbycatClientFactory,
-        );
-        const createBreakCategoryService = new CreateBreakCategoryService(
-          this.tournamentRepository,
-          this.breakCategoryRepository,
-          this.tabbycatClientFactory,
-        );
-        const createSpeakerCategoryService = new CreateSpeakerCategoryService(
-          this.tournamentRepository,
-          this.speakerCategoryRepository,
-          this.tabbycatClientFactory,
-        );
         const [bcMaxSeq, scMaxSeq] = await Promise.all([
           this.breakCategoryQuery.getMaxSeq({ tournamentId }),
           this.speakerCategoryQuery.getMaxSeq({ tournamentId }),
         ]);
         const [institutionResult, breakCategoryResult, speakerCategoryResult] =
           await Promise.all([
-            createInstitutionService.executeMany(
+            this.createInstitutionService.executeMany(
               tournamentId,
               missingEntities.institutions.map((code) => ({
                 name: code,
@@ -176,7 +176,7 @@ export class ExecuteTeamImportService {
                 sync: true,
               },
             ),
-            createBreakCategoryService.executeMany(
+            this.createBreakCategoryService.executeMany(
               tournamentId,
               missingEntities.breakCategories.map((slug, idx) => ({
                 name: slug,
@@ -190,7 +190,7 @@ export class ExecuteTeamImportService {
                 sync: true,
               },
             ),
-            createSpeakerCategoryService.executeMany(
+            this.createSpeakerCategoryService.executeMany(
               tournamentId,
               missingEntities.speakerCategories.map((slug, idx) => ({
                 name: slug,
@@ -278,10 +278,11 @@ export class ExecuteTeamImportService {
                     .otherwise((e) => err(e)),
               ),
             };
-          const updatedSession = TeamImportSession.updateStatusMissingEntities(
-            importSession,
-            importSessionFailedReason,
-          );
+          const updatedSession =
+            yield* TeamImportSession.updateStatusMissingEntities(
+              importSession,
+              importSessionFailedReason,
+            );
           yield* await this.teamImportSessionRepository.save(updatedSession);
           return err(new TeamImportFailedError(importSessionFailedReason));
         }
@@ -313,13 +314,10 @@ export class ExecuteTeamImportService {
           ]),
         );
         // Import teams
-        const createTeamService = new CreateTeamService(
-          this.tournamentRepository,
-          this.unitOfWork,
-          this.tabbycatClientFactory,
-        );
-        const rowsToImport = importSession.rows.filter((row) => row.success);
-        const teamResult = await createTeamService.executeMany(
+        const rowsToImport = importSession.rows
+          .filter((row) => row.success)
+          .filter((row) => row.doImport);
+        const teamResult = await this.createTeamService.executeMany(
           tournamentId,
           rowsToImport.map(({ parsed }) => ({
             reference: parsed.reference,
@@ -359,12 +357,11 @@ export class ExecuteTeamImportService {
         );
         // Write results
         const updatedSession = yield* teamResult.match(
-          (ids) =>
-            ok(TeamImportSession.updateStatusSuccess(importSession, ids)),
+          (ids) => TeamImportSession.updateStatusSuccess(importSession, ids),
           (e) =>
             match(e)
               .with(P.instanceOf(PartialFailedError), (e) =>
-                ok(TeamImportSession.updateStatusNewTeams(importSession, e)),
+                TeamImportSession.updateStatusNewTeams(importSession, e),
               )
               .otherwise((e) => err(e)),
         );

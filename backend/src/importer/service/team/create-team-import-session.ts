@@ -1,40 +1,27 @@
-import { ImportOrigin } from '../domain/values';
+import { ImportOrigin } from '../../domain/values';
 import { TournamentId } from '@shared/domain/models';
-import { ReadFileService } from './read-file';
-import { ok, Result, safeTry } from 'neverthrow';
+import { ReadImportOriginService } from '../read-import-origin';
+import { ok, safeTry } from 'neverthrow';
 import {
   groupTeamImportRow,
   parseGroupedTeamImportRow,
   parseRawTable,
-} from '../domain/service/parser';
-import {
-  TeamImportSession,
-  TeamImportRow,
-  TeamImportSessionId,
-} from '../domain/models';
-import { TeamImportSessionRepositoryPort } from '../domain/repository';
+} from '../../domain/service/parser';
+import { TeamImportSession, TeamImportRow } from '../../domain/models';
+import { TeamImportSessionRepositoryPort } from '../../domain/repository';
 import { throw_, throwUnexpected_ } from 'src/lib/throw';
 import {
   checkTeam,
   serializeTeamDuplicationStatus,
-} from '../domain/service/checker';
-import {
-  BreakCategoryQuery,
-  InstitutionQuery,
-  SpeakerCategoryQuery,
-  TeamQuery,
-} from '@shared/infrastructure/query';
+} from '../../domain/service/checker';
+import { TeamQuery } from '@shared/infrastructure/query';
 import { ImportCredentials } from '@importer/domain/values/import-credentials';
-import { AuthError, NotFoundError, SaveFailedError } from '@shared/domain';
 
 export class CreateTeamImportSessionService {
   constructor(
     private importSessionRepository: TeamImportSessionRepositoryPort,
     private teamQuery: TeamQuery,
-    private institutionQuery: InstitutionQuery,
-    private breakCategoryQuery: BreakCategoryQuery,
-    private speakerCategoryQuery: SpeakerCategoryQuery,
-    private readFileService: ReadFileService,
+    private readFileService: ReadImportOriginService,
   ) {}
   async execute({
     tournamentId,
@@ -44,15 +31,14 @@ export class CreateTeamImportSessionService {
     tournamentId: TournamentId;
     origin: ImportOrigin;
     credentials: ImportCredentials;
-  }): Promise<
-    Result<TeamImportSessionId, AuthError | NotFoundError | SaveFailedError>
-  > {
+  }) {
     return await safeTry(
       async function* (this: CreateTeamImportSessionService) {
         const existingTeamsPromise = this.teamQuery.getByTournamentId({
           tournamentId,
         });
         const data = yield* await this.readFileService.read(
+          tournamentId,
           origin,
           credentials,
         );

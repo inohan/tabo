@@ -2,7 +2,7 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { db } from './drizzle';
 import { organization } from 'better-auth/plugins/organization';
-import { openAPI } from 'better-auth/plugins';
+import { openAPI, testUtils } from 'better-auth/plugins';
 import { ac, owner, admin, member } from './permissions';
 
 export const auth = betterAuth({
@@ -36,9 +36,8 @@ export const auth = betterAuth({
       },
     }),
     openAPI(),
+    testUtils(),
   ],
   basePath: '/auth',
   disabledPaths: [],
 });
-
-export type IdentityAuth = typeof auth;

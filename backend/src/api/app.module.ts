@@ -13,6 +13,7 @@ import { TeamImportController } from './importer/team/team.controller';
 import { AdjudicatorController } from './importer/adjudicator/adjudicator.controller';
 import { ImporterModule } from './importer/importer.module';
 import { ValibotSerializerInterceptor } from './lib/valibot';
+import { FileController } from './file/file.controller';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ValibotSerializerInterceptor } from './lib/valibot';
     InstitutionController,
     TeamImportController,
     AdjudicatorController,
+    FileController,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: ValibotSerializerInterceptor },

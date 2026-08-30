@@ -6,5 +6,6 @@
     "^node:assert",
     "^assert/strict$"
   ],
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "js/ts.updateImportsOnFileMove.enabled": "always"
 }

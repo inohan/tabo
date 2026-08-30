@@ -4,6 +4,7 @@ export const CellValue = v.union([
   v.string(),
   v.number(),
   v.boolean(),
+  v.date(),
   v.null(),
 ]);
 
